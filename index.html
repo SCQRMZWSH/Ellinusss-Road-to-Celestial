@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>厄凛娜斯的成神之路 · 3.9</title>
+<style>
+  /* ============================================================
+     CSS 样式
+     ============================================================ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0610;
+    color: #d8c8e8;
+    font-family: "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  #game {
+    width: max(400px, calc(100vw - 200px));   /* ★ 最小 400px */
+    max-width: 100%;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    color: #c89ae8;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+  }
+
+  .sub {
+    text-align: center;
+    font-size: 12px;
+    color: #6a5a7a;
+    margin-bottom: 16px;
+  }
+
+  /* ===== 开始界面 ===== */
+  #startScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    text-align: center;
+    gap: 32px;
+  }
+  #startScreen h1 {
+    font-size: 28px;
+    letter-spacing: 6px;
+    margin-bottom: 8px;
+  }
+  #startScreen .sub {
+    font-size: 13px;
+    margin-bottom: 0;
+  }
+  #btn-start {
+    width: auto;
+    padding: 14px 48px;
+    font-size: 16px;
+    letter-spacing: 4px;
+    text-align: center;
+    background: #2a1040;
+    border: 1px solid #6a3a9a;
+    color: #e8c8ff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: inherit;
+  }
+  #btn-start:hover {
+    background: #3a1858;
+    border-color: #ff6ad5;
+    color: #ffd8ff;
+    box-shadow: 0 0 16px rgba(255,106,213,.4);
+  }
+
+  #mainGame { display: none; }
+
+  /* ===== 阶段横条 ===== */
+  #goal {
+    background: linear-gradient(90deg, #1a0a2a, #2a1040, #1a0a2a);
+    border: 1px solid #6a3a9a;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    text-align: center;
+    color: #e8c8ff;
+    line-height: 1.6;
+  }
+  #goal b { color: #ff6ad5; }
+  #goal .done { color: #6ad58a; }
+  #goal .next { color: #a87ad8; }
+
+  /* ===== TAB 切换栏 ===== */
+  #tabbar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #3a2050;
+  }
+  #tabbar button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6a5a7a;
+    padding: 10px 6px;
+    border-radius: 0;
+    font-size: 13px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 0;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  #tabbar button:hover { color: #a87ad8; }
+  #tabbar button.active {
+    color: #ff6ad5;
+    border-bottom-color: #ff6ad5;
+  }
+  #tabbar button.hidden { display: none; }
+
+
+  .tab-panel { display: none; }
+  .tab-panel.active {
+    display: block;
+    width: calc(100vw - 200px);   /* ★ 窗口宽度 - 200px */
+    margin: 0 auto;
+  }
+
+  .cols { display: flex; gap: 16px; }
+  .col { flex: 1; }
+
+  /* ===== 通用面板 ===== */
+  .panel {
+    background: #12081e;
+    border: 1px solid #3a2050;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .panel h2 {
+    font-size: 14px;
+    color: #a87ad8;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #3a2050;
+    padding-bottom: 4px;
+  }
+
+  .stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 3px 0;
+    color: #b8a8c8;
+  }
+  .stat span:last-child {
+    color: #e8d8ff;
+    font-family: Consolas, monospace;
+  }
+  /* 伤残等级影响部分用绿色 */
+  .stat .pos { color: #6ad58a; }
+  /* 伤残等级削弱部分用浅红 */
+  .stat .neg { color: #d58a8a; }
+  /* 伤残程度加成部分用浅绿 */
+  .stat .deg { color: #6ad58a; }
+
+  button {
+    width: 100%;
+    max-width: 420px;       /* ★ 限制最大宽度 */
+    display: block;         /* ★ 块级显示 */
+    background: #2a1040;
+    border: 1px solid #6a3a9a;
+    color: #d8c8e8;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    margin-bottom: 6px;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  button:hover:not(:disabled) {
+    background: #3a1858;
+    border-color: #a87ad8;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    background: #1a1020;      /* ★ 灰色底 */
+    border-color: #3a2a4a;
+    color: #6a5a7a;
+  }
+  /* 绿色升级按钮禁用时也变灰 */
+  button.green-upgrade:disabled {
+    background: #1a1020;
+    border-color: #3a2a4a;
+  }
+
+  button .cost {
+    float: right;
+    color: #ff6ad5;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+  }
+  button .desc {
+    display: block;
+    font-size: 11px;
+    color: #8a7a9a;
+    margin-top: 2px;
+  }
+  button .lvl {
+    float: right;
+    color: #a87ad8;
+    font-size: 11px;
+    margin-left: 8px;
+  }
+
+  /* 绿色底的升级按钮（伤残秘境） */
+  button.green-upgrade {
+    background: #0d3d0d;
+    border-color: #199B19;
+  }
+  button.green-upgrade:hover:not(:disabled) {
+    background: #145214;
+    border-color: #2ad52a;
+  }
+  button.green-upgrade .cost { color: #6ad58a; }
+  button.green-upgrade .desc { color: #8ac89a; }
+
+  #modebar { display: flex; gap: 8px; }
+  #modebar button {
+    flex: 1;
+    text-align: center;
+    margin-bottom: 0;
+    font-size: 13px;
+    padding: 10px 8px;
+  }
+  #modebar button.active {
+    background: #4a1858;
+    border-color: #ff6ad5;
+    color: #ffd8ff;
+    box-shadow: 0 0 8px rgba(255,106,213,.4);
+  }
+  #modebar button .desc {
+    display: block;
+    font-size: 10px;
+    color: #8a6a9a;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  #modebar button.active .desc { color: #d8a8e8; }
+
+  #lvrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #1a0a2a;
+    margin-bottom: 6px;
+  }
+  #lvrow .lv-left {
+    flex: 0 0 auto;
+    font-size: 13px;
+    color: #b8a8c8;
+    min-width: 40px;
+  }
+  #lvrow .lv-mid {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #lvrow .lv-mid input {
+    width: 60px;
+    background: #0a0610;
+    border: 1px solid #4a2a6a;
+    color: #e8d8ff;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    text-align: center;
+  }
+  #lvrow .lv-mid button {
+    width: auto;
+    margin-bottom: 0;
+    padding: 4px 8px;
+    flex: 0 0 auto;
+    font-size: 12px;
+  }
+  #lvrow .lv-right {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: #8a7a9a;
+    text-align: right;
+    line-height: 1.4;
+  }
+  #lvrow .lv-right b { color: #a87ad8; }
+
+  .formula {
+    font-size: 11px;
+    color: #6a5a7a;
+    padding: 4px 0;
+    border-bottom: 1px solid #1a0a2a;
+    margin-bottom: 4px;
+  }
+  .formula b { color: #c89ae8; }
+
+  #log {
+    height: 260px;
+    overflow-y: auto;
+    font-size: 12px;
+    color: #8a7a9a;
+    line-height: 1.7;
+  }
+  #log div {
+    border-bottom: 1px solid #1a0a2a;
+    padding: 2px 0;
+  }
+  #log .hl { color: #ff6ad5; }
+  #log .dmg { color: #c86a6a; }
+  #log .heal { color: #6ad58a; }
+
+  .bar-wrap {
+    background: #1a0a2a;
+    border-radius: 4px;
+    height: 14px;
+    overflow: hidden;
+    margin: 6px 0;
+    position: relative;
+  }
+  .bar { height: 100%; transition: width .1s; }
+  #hpBar { background: linear-gradient(90deg, #6a2a8a, #c86ad5); }
+  #mhpBar { background: linear-gradient(90deg, #8a2a2a, #d56a6a); }
+  .bar-label {
+    position: absolute;
+    inset: 0;
+    font-size: 10px;
+    line-height: 14px;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 0 3px #000;
+    font-family: Consolas, monospace;
+  }
+
+  #reviveMask {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,2,10,.85);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 50;
+  }
+  #reviveMask h2 {
+    font-size: 24px;
+    color: #d56a6a;
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+  }
+  #reviveMask .cd {
+    font-size: 48px;
+    color: #ff6ad5;
+    font-family: Consolas, monospace;
+  }
+  #reviveMask p {
+    font-size: 13px;
+    color: #8a7a9a;
+    margin-top: 12px;
+  }
+
+  #end {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,2,10,.96);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 99;
+  }
+  #end h2 {
+    font-size: 28px;
+    color: #ff6ad5;
+    margin-bottom: 12px;
+    letter-spacing: 6px;
+  }
+  #end p {
+    font-size: 14px;
+    color: #a87ad8;
+    margin-bottom: 6px;
+  }
+  #end .quote {
+    color: #6a5a7a;
+    font-style: italic;
+    margin-top: 16px;
+    font-size: 13px;
+  }
+
+  .opt-row { display: flex; gap: 8px; margin-bottom: 6px; }
+  .opt-row button {
+    flex: 1;
+    margin-bottom: 0;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .save-info {
+    font-size: 11px;
+    color: #8a7a9a;
+    padding: 4px 0;
+  }
+  .save-info b { color: #a87ad8; }
+
+  /* ===== 成就 ===== */
+  .achievement {
+    background: #0a0610;
+    border: 1px solid #2a1540;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .achievement.done {
+    border-color: #ff6ad5;
+    box-shadow: 0 0 8px rgba(255,106,213,.3);
+  }
+  .ach-name {
+    font-size: 13px;
+    color: #c89ae8;
+    margin-bottom: 4px;
+  }
+  .achievement.done .ach-name { color: #ff6ad5; }
+  .ach-line {
+    font-size: 11px;
+    color: #9a8aaa;
+    line-height: 1.6;
+  }
+  .ach-line b { color: #a87ad8; }
+  .ach-done-tag {
+    float: right;
+    color: #6ad58a;
+    font-size: 11px;
+  }
+
+  .placeholder {
+    text-align: center;
+    color: #4a3a5a;
+    font-size: 13px;
+    padding: 40px 20px;
+    font-style: italic;
+  }
+
+  /* ===== 伤残秘境 TAB ===== */
+  .disability-header {
+    text-align: center;
+    font-size: 14px;
+    color: #c89ae8;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+  }
+  /* 伤残等级两栏：左正面（浅绿）、右负面（浅红） */
+  .disability-cols {
+    display: flex;
+    gap: 12px;
+  }
+  .disability-cols .dcol {
+    flex: 1;
+    background: #0a0610;
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .disability-cols .dcol.positive {
+    border: 1px solid #2a5a2a;
+  }
+  .disability-cols .dcol.negative {
+    border: 1px solid #5a2a2a;
+  }
+  .dcol .dcol-title {
+    font-size: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #2a1540;
+    text-align: center;
+  }
+  .dcol.positive .dcol-title { color: #6ad58a; }
+  .dcol.negative .dcol-title { color: #d58a8a; }
+  /* 每一条效果：描述 + 公式/结果，居中 */
+  .deffect {
+    text-align: center;
+    padding: 8px 4px;
+    border-bottom: 1px solid #1a0a2a;
+  }
+  .deffect:last-child { border-bottom: none; }
+  .deffect .ddesc {
+    font-size: 11px;
+    color: #9a8aaa;
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+  .deffect .dformula {
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    line-height: 1.5;
+  }
+  .dcol.positive .deffect .dformula { color: #6ad58a; }
+  .dcol.negative .deffect .dformula { color: #d58a8a; }
+
+  /* 伤残程度：单栏，浅绿 */
+  .degree-box {
+    background: #0a0610;
+    border: 1px solid #2a5a2a;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 12px;
+  }
+  .degree-box .dcol-title {
+    font-size: 12px;
+    color: #6ad58a;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #2a1540;
+    text-align: center;
+  }
+  .degree-box .deffect .dformula { color: #6ad58a; }
+
+  /* ===== 剧情弹窗 ===== */
+  #storyOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,2,10,.85);   /* 半透明黑盖板 */
+    display: none;                  /* 默认隐藏 */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;                   /* 比复活遮罩和通关遮罩都高 */
+  }
+  #storyTip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #199B19;            /* 绿色横条 */
+    color: #fff;
+    font-size: 13px;
+    text-align: center;
+    padding: 10px;
+    letter-spacing: 1px;
+  }
+  #storyBox {
+    position: relative;
+    background: #12081e;
+    border: 2px solid #6a3a9a;
+    border-radius: 12px;
+    /* 宽高由 JS 动态设置 */
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+  }
+  /* ★ 伤残说话时，整个窗口变绿 */
+  #storyBox.char-shangcan {
+    background: #0d3d0d;              /* 深绿底 */
+    border-color: #199B19;            /* 绿边框 */
+  }
+  /* 伤残说话时，角色名变绿 */
+  #storyBox.char-shangcan #storyChar {
+    color: #6ad58a;
+    border-bottom-color: #199B19;
+  }
+  /* 伤残说话时，← → 按钮变绿（✔ 和 ❌ 不受影响） */
+  #storyBox.char-shangcan #storyPrev,
+  #storyBox.char-shangcan #storyNext {
+    background: #0d3d0d;
+    border-color: #199B19;
+    color: #6ad58a;
+  }
+  #storyBox.char-shangcan #storyPrev:hover,
+  #storyBox.char-shangcan #storyNext:hover {
+    background: #145214;
+    border-color: #2ad52a;
+    color: #a8f5b8;
+  }
+  #storyChar {
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #3a2050;
+    margin-bottom: 12px;
+    /* 颜色由 JS 动态设置 */
+  }
+  /* 台词区域 */
+  #storyText {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 15px;
+    color: #d8c8e8;
+    line-height: 1.8;
+    padding: 0 20px;
+    word-break: break-word;
+  }
+
+  /* 剧情按钮通用 */
+  .story-btn {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #2a1040;
+    border: 1px solid #6a3a9a;
+    color: #e8c8ff;
+    font-size: 20px;
+    cursor: pointer;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+  }
+  .story-btn:hover {
+    background: #3a1858;
+    border-color: #ff6ad5;
+    color: #ffd8ff;
+  }
+  /* 上一片：左下 */
+  #storyPrev {
+    left: -22px;
+    bottom: 20px;
+    display: none;                  /* JS 控制显示 */
+  }
+  /* 下一片：右下 */
+  #storyNext {
+    right: -22px;
+    bottom: 20px;
+    display: none;
+  }
+  /* 完成：底部中间 */
+  #storyDone {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -22px;
+    display: none;
+    background: #199B19;
+    border-color: #2ad52a;
+  }
+  #storyDone:hover {
+    background: #2ad52a;
+  }
+
+  /* ===== 剧情回顾列表 ===== */
+  .story-review-item {
+    background: #0a0610;
+    border: 1px solid #3a2050;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all .15s;
+    font-size: 13px;
+    color: #b8a8c8;
+  }
+  .story-review-item:hover {
+    background: #1a0a2a;
+    border-color: #a87ad8;
+    color: #e8d8ff;
+  }
+  .story-review-item .sr-title {
+    color: #c89ae8;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .story-review-item .sr-info {
+    font-size: 11px;
+    color: #7a6a8a;
+  }
+  .story-review-item.locked {
+    opacity: .4;
+    cursor: not-allowed;
+  }
+  .story-review-item.locked:hover {
+    background: #0a0610;
+    border-color: #3a2050;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     开始界面
+     ============================================================ -->
+<div id="startScreen">
+  <h1>厄凛娜斯的成神之路</h1>
+  <div class="sub">第一阶段 · 萌生 → 第二阶段 · 残根</div>
+  <button id="btn-start">开 始 游 戏</button>
+</div>
+
+<!-- ============================================================
+     游戏主界面
+     ============================================================ -->
+<div id="mainGame">
+
+  <h1>厄凛娜斯的成神之路</h1>
+  <div class="sub">萌生 → 残根</div>
+
+  <!-- 阶段横条 -->
+  <div id="goal">
+    <div id="goal1"></div>
+    <div id="goal2"></div>
+  </div>
+
+  <!-- TAB 切换栏 -->
+  <div id="tabbar">
+    <button class="tab-btn active" data-tab="battle">战斗</button>
+    <button class="tab-btn" data-tab="upgrade">升级</button>
+    <button class="tab-btn hidden" id="tabbtn-weaving" data-tab="weaving">织线</button>
+    <button class="tab-btn hidden" id="tabbtn-disability" data-tab="disability">伤残秘境</button>
+    <button class="tab-btn" data-tab="achievement">成就</button>
+    <button class="tab-btn" data-tab="story">剧情回顾</button>
+    <button class="tab-btn" data-tab="options">选项</button>
+  </div>
+
+  <!-- ===== TAB 1：战斗 ===== -->
+  <div id="tab-battle" class="tab-panel active">
+    <div class="cols">
+      <div class="col">
+        <div class="panel">
+          <h2>厄凛娜斯</h2>
+          <div class="stat"><span>凄残币</span><span id="s-money">0</span></div>
+          <div class="stat"><span>攻击力</span><span id="s-atk">15</span></div>
+          <div class="stat"><span>防御力</span><span id="s-def">2</span></div>
+          <div class="stat"><span>生命值</span><span id="s-hp">100 / 100</span></div>
+          <div class="stat" id="row-disability-lv" style="display:none;"><span>伤残等级</span><span id="s-disability-lv">Lv.0/100</span></div>
+          <div class="stat" id="row-disability-value" style="display:none;"><span>伤残值</span><span id="s-disability-value">0/0</span></div>
+          <div class="stat" id="row-disability-degree" style="display:none;"><span>伤残程度</span><span id="s-disability-degree">0→+0%</span></div>
+          <div class="stat"><span>先手时长</span><span id="s-first">2.0s</span></div>
+
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid #2a1540;">
+            <div style="font-size:13px;color:#ff6ad5;margin-bottom:6px;">技能</div>
+            <div style="background:#0a0610;border:1px solid #4a2a6a;border-radius:6px;padding:10px;margin-bottom:6px;">
+              <div style="font-size:13px;color:#ff6ad5;margin-bottom:6px;">伤残技【棘刺】</div>
+              <div style="font-size:11px;color:#8a7a9a;line-height:1.6;margin-bottom:8px;">
+                视作普通攻击。以棘刺凝聚邪念刺向敌人。
+              </div>
+              <div class="stat"><span>武器火力</span><span id="sk-fp">1.0</span></div>
+              <div class="stat"><span>攻击间隔</span><span id="sk-int">1.0s</span></div>
+              <div class="stat"><span>攻击范围</span><span id="sk-range">2.0m</span></div>
+              <div class="stat"><span>实际伤害</span><span id="sk-dmg">15</span></div>
+            </div>
+            <div id="skill-xienian" style="background:#0a0610;border:1px solid #4a2a6a;border-radius:6px;padding:10px;display:none;">
+              <div style="font-size:13px;color:#ff6ad5;margin-bottom:6px;">魔神技【邪念无伤】</div>
+              <div id="xienian-desc" style="font-size:11px;color:#8a7a9a;line-height:1.6;margin-bottom:8px;"></div>
+              <div id="xienian-extra" style="font-size:11px;color:#7a6a8a;font-style:italic;display:none;">
+                该硬上限削弱优先于伤残等级的削弱。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="panel">
+          <h2>模式切换</h2>
+          <div id="modebar">
+            <button id="modeFight">战斗
+              <span class="desc">正常战斗。怪物与厄凛娜斯互相攻击，击杀获得凄残币。</span>
+            </button>
+            <button id="modeRest" class="active">休息
+              <span class="desc">双方停止攻击，每秒回复生命值。用于回血，但不会获得凄残币。</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>怪物</h2>
+          <div class="formula">
+            基础伤害 = max(<b>攻击力 - 对方防御力</b>, 2) × <b>技能武器火力</b>
+          </div>
+          <div id="lvrow">
+            <div class="lv-left">等级</div>
+            <div class="lv-mid">
+              <button id="lvMinus">-</button>
+              <input type="number" id="lvInput" min="1" max="1" value="1">
+              <button id="lvPlus">+</button>
+              <button id="lvApply">确定</button>
+            </div>
+            <div class="lv-right">
+              当前：<b id="curLv">1</b><br>
+              最大：<b id="lvCap">1</b>
+            </div>
+          </div>
+          <div class="stat"><span>攻击力</span><span id="m-atk">15</span></div>
+          <div class="stat"><span>防御力</span><span id="m-def">0</span></div>
+          <div class="stat"><span>生命值</span><span id="m-hp">100 / 100</span></div>
+          <div class="stat"><span>掉落</span><span id="m-drop">20000</span></div>
+          <div class="bar-wrap">
+            <div class="bar" id="mhpBar" style="width:100%"></div>
+            <div class="bar-label" id="mhpTxt">100 / 100</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>厄凛娜斯 · 生命</h2>
+          <div class="bar-wrap">
+            <div class="bar" id="hpBar" style="width:100%"></div>
+            <div class="bar-label" id="hpTxt">100 / 100</div>
+          </div>
+        </div>
+
+        <!-- ★ 新增：伤残值 -->
+        <div class="panel" id="disabilityValuePanel" style="display:none;">
+          <h2>厄凛娜斯 · 伤残值</h2>
+          <div class="bar-wrap">
+            <div class="bar" id="dvBar" style="width:100%;background:linear-gradient(90deg,#2a5a2a,#6ad58a);"></div>
+            <div class="bar-label" id="dvTxt">0 / 0</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>战斗日志</h2>
+          <div id="log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2：升级 ===== -->
+  <div id="tab-upgrade" class="tab-panel">
+    <!-- 未解锁残根时：单栏，只有萌生 -->
+    <div id="upgrade-single">
+      <div class="panel">
+        <h2>升级 · 萌生</h2>
+        <button id="up1">攻击力 +1 <span class="lvl" id="l1">Lv.0</span><span class="cost" id="c1">0</span>
+          <span class="desc">价格：3000000 × 1.3^n</span></button>
+        <button id="up2">防御力 +1 <span class="lvl" id="l2">Lv.0</span><span class="cost" id="c2">0</span>
+          <span class="desc">价格：100000 × 3.1^n</span></button>
+        <button id="up3">生命值 +10 <span class="lvl" id="l3">Lv.0</span><span class="cost" id="c3">0</span>
+          <span class="desc">价格：100000 × 1.058^n</span></button>
+        <button id="up4">棘刺·间隔 -0.1s <span class="lvl" id="l4">Lv.0</span><span class="cost" id="c4">0</span>
+          <span class="desc">价格：100000 × 1.5^n，上限5次</span></button>
+        <button id="up5">棘刺·火力 +0.1 <span class="lvl" id="l5">Lv.0</span><span class="cost" id="c5">0</span>
+          <span class="desc">价格：100000 × 1.25^n，上限15次</span></button>
+        <button id="up6">快速休息 <span class="lvl" id="l6">Lv.0</span><span class="cost" id="c6">0</span>
+          <span class="desc">价格：100000 × 1.25^n，休息时每秒额外恢复 5% 生命值，上限 6 级</span></button>
+        <button id="up7" class="green-upgrade" style="display:none;">伤残秘境 <span class="lvl" id="l7">未购买</span><span class="cost" id="c7">1×10^7</span>
+          <span class="desc">欢迎来到伤残秘境。仅可购买一次。</span></button>
+      </div>
+    </div>
+
+    <!-- 解锁残根后：两栏 -->
+    <div id="upgrade-double" class="cols" style="display:none;">
+      <div class="col">
+        <div class="panel">
+          <h2>升级 · 萌生</h2>
+          <button id="up1b">攻击力 +1 <span class="lvl" id="l1b">Lv.0</span><span class="cost" id="c1b">0</span>
+            <span class="desc">价格：3000000 × 1.3^n</span></button>
+          <button id="up2b">防御力 +1 <span class="lvl" id="l2b">Lv.0</span><span class="cost" id="c2b">0</span>
+            <span class="desc">价格：100000 × 3.1^n</span></button>
+          <button id="up3b">生命值 +10 <span class="lvl" id="l3b">Lv.0</span><span class="cost" id="c3b">0</span>
+            <span class="desc">价格：100000 × 1.058^n</span></button>
+          <button id="up4b">棘刺·间隔 -0.1s <span class="lvl" id="l4b">Lv.0</span><span class="cost" id="c4b">0</span>
+            <span class="desc">价格：100000 × 1.5^n，上限5次</span></button>
+          <button id="up5b">棘刺·火力 +0.1 <span class="lvl" id="l5b">Lv.0</span><span class="cost" id="c5b">0</span>
+            <span class="desc">价格：100000 × 1.25^n，上限15次</span></button>
+          <button id="up6b">快速休息 <span class="lvl" id="l6b">Lv.0</span><span class="cost" id="c6b">0</span>
+            <span class="desc">价格：100000 × 1.25^n，休息时每秒额外恢复 5% 生命值，上限 6 级</span></button>
+          <button id="up7b" class="green-upgrade" style="display:none;">伤残秘境 <span class="lvl" id="l7b">已购买</span><span class="cost" id="c7b">—</span>
+            <span class="desc">已解锁伤残秘境。</span></button>
+        </div>
+      </div>
+      <div class="col">
+        <div class="panel">
+          <h2>升级 · 残根</h2>
+          <button id="ur1" style="display:none;">时间抹除域 <span class="lvl" id="lr1">Lv.0</span><span class="cost" id="cr1">0</span>
+            <span class="desc">独立加成。双方伤害 ×1.2^等级。价格：10^(5+2.5n)</span></button>
+          <button id="ur2" style="display:none;">迅速休息 <span class="lvl" id="lr2">Lv.0</span><span class="cost" id="cr2">0</span>
+            <span class="desc">非独立加成。休息时每秒额外恢复 25% 生命值，上限 18 级。价格：10000000 × 1.15^n</span></button>
+          <button id="ur3" style="display:none;">邪念无伤 · 攻 <span class="lvl" id="lr3">Lv.0</span><span class="cost" id="cr3">0</span>
+            <span class="desc">超出硬上限的攻击→生命转化率+1，上限11级。价格：500000 × 1.5^n</span></button>
+          <button id="ur4" style="display:none;">邪念无伤 · 防 <span class="lvl" id="lr4">Lv.0</span><span class="cost" id="cr4">0</span>
+            <span class="desc">超出硬上限的防御→生命转化率+2，上限10级。价格：500000 × 1.5^n</span></button>
+          <button id="ur5" style="display:none;">萌生之织线 <span class="lvl" id="lr5">Lv.0</span><span class="cost" id="cr5">0</span>
+            <span class="desc">解锁升级 · 萌生n的织线，上限3级。价格：10^(6.5+0.75n)</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3：织线（解锁后显示） ===== -->
+  <div id="tab-weaving" class="tab-panel">
+    <div class="panel" style="background:#f5f5f5;border:2px solid #fff;">
+      <div style="text-align:center;font-size:14px;color:#222;margin-bottom:12px;letter-spacing:2px;padding:8px;background:#e8e8e8;border-radius:6px;">
+        你曾最多持有 <b id="weaving-maxMoney">0</b> 凄残币
+      </div>
+      <div style="font-size:14px;color:#222;margin-bottom:10px;font-weight:bold;">织线 · 萌生</div>
+      <div style="display:flex;gap:12px;">
+        <div id="weaving-box-1" style="display:none;flex:1;background:#fff;border:1px solid #ccc;border-radius:6px;padding:12px;color:#222;">
+          <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 萌生1</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生1的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-1">0</b></div>
+        </div>
+        <div id="weaving-box-2" style="display:none;flex:1;background:#fff;border:1px solid #ccc;border-radius:6px;padding:12px;color:#222;">
+          <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 萌生2</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生2的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-2">0</b></div>
+        </div>
+        <div id="weaving-box-3" style="display:none;flex:1;background:#fff;border:1px solid #ccc;border-radius:6px;padding:12px;color:#222;">
+          <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 萌生3</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生3的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-3">0</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 4：伤残秘境（解锁后显示） ===== -->
+  <div id="tab-disability" class="tab-panel">
+    <div class="panel">
+      <div class="disability-header">伤残等级</div>
+      <div class="disability-cols">
+        <!-- 左：正面效果（浅绿） -->
+        <div class="dcol positive">
+          <div class="dcol-title">正面效果</div>
+          <div class="deffect">
+            <div class="ddesc">生命值的变化（伤残生命增幅，不可恢复，复活时已损失）</div>
+            <div class="dformula" id="df-hp">+10%×伤残等级</div>
+          </div>
+          <div class="deffect">
+            <div class="ddesc">伤残值的提供（每1伤残等级提供1伤残值，致命时按1伤残值→1%生命上限抵挡）</div>
+            <div class="dformula" id="df-value">1伤残等级 = 1伤残值</div>
+          </div>
+        </div>
+        <!-- 右：负面效果（浅红） -->
+        <div class="dcol negative">
+          <div class="dcol-title">负面效果</div>
+          <div class="deffect">
+            <div class="ddesc">攻击力的变化</div>
+            <div class="dformula" id="df-atk">攻击力×伤残等级^-0.3</div>
+          </div>
+          <div class="deffect">
+            <div class="ddesc">防御力的变化</div>
+            <div class="dformula" id="df-def">防御力×伤残等级^-0.25</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="degree-box">
+      <div class="dcol-title">伤残程度</div>
+      <div class="deffect">
+        <div class="ddesc">伤害加成（独立加成）</div>
+        <div class="dformula" id="df-degree">伤残程度 = 10×(lg(生命上限)-lg(当前生命值))</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 5：成就 ===== -->
+  <div id="tab-achievement" class="tab-panel">
+    <div class="panel">
+      <h2>成就</h2>
+      <div id="achGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <!-- 成就卡片会由 JS 动态生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 6：剧情回顾 ===== -->
+  <div id="tab-story" class="tab-panel">
+    <div class="panel">
+      <h2>剧情回顾</h2>
+      <div id="storyReviewList"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+     剧情弹窗（覆盖层）
+     ============================================================ -->
+  <div id="storyOverlay">
+    <!-- 顶部横条提示 -->
+    <div id="storyTip">
+      您进入了剧情，为了您的游戏体验以及厄凛娜斯的安全，自动为您切换成休息模式
+    </div>
+    <!-- 剧情弹窗 -->
+    <div id="storyBox">
+      <!-- 角色名 -->
+      <div id="storyChar"></div>
+      <!-- 台词 -->
+      <div id="storyText"></div>
+      <!-- 左下：上一片 -->
+      <button id="storyPrev" class="story-btn">←</button>
+      <!-- 右下：下一片 -->
+      <button id="storyNext" class="story-btn">→</button>
+      <!-- 底部中间：完成 -->
+      <button id="storyDone" class="story-btn">√</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       剧情回顾 TAB 里的列表容器
+       ============================================================ -->
+  <!-- 这个放在 tab-story 的 panel 里，替换原来的 placeholder -->
+
+  <!-- ===== TAB 7：选项 ===== -->
+  <div id="tab-options" class="tab-panel">
+    <div class="cols">
+      <div class="col">
+        <div class="panel">
+          <h2>厄凛娜斯 · 基础属性</h2>
+          <div class="stat"><span>凄残币</span><span id="o-money">0</span></div>
+          <div class="stat"><span>攻击力</span><span id="o-atk">15</span></div>
+          <div class="stat"><span>防御力</span><span id="o-def">2</span></div>
+          <div class="stat"><span>生命值</span><span id="o-hp">100 / 100</span></div>
+          <div class="stat"><span>先手时长</span><span id="o-first">2.0s</span></div>
+        </div>
+        <div class="panel">
+          <h2>游戏阶段</h2>
+          <div class="stat"><span>当前阶段</span><span id="o-stage">第一阶段 · 萌生</span></div>
+          <div class="stat"><span>终局目标</span><span id="o-goal">10^7 凄残币</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="panel">
+          <h2>选项</h2>
+          <div class="opt-row">
+            <button id="btn-export">导出存档</button>
+            <button id="btn-import">导入存档</button>
+          </div>
+          <input type="file" id="file-input" accept=".deltxt" style="display:none;">
+          <div class="save-info">存档总游戏时长：<b id="playTime">0d 00:00:00.000</b></div>
+          <div class="save-info">存档总导出次数：<b id="saveCount">0</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 复活遮罩 -->
+<div id="reviveMask">
+  <h2>厄 凛 娜 斯 倒 下 了</h2>
+  <div class="cd" id="reviveCd">10</div>
+  <p>等待复活……</p>
+</div>
+
+<!-- 通关遮罩 -->
+<div id="end">
+  <h2>第  二  阶  段    ·    残  根     完  结</h2>
+  <p>厄凛娜斯的伤残等级抵达 100。</p>
+  <p>又一位“完美”的伤残造物在伤残秘境诞生了。</p>
+  <p class="quote">作者 伤残凄融莽葬无生悔 · 源之初 寄语：“愿伤残护佑你。但，请将你的一切献给厄凛娜斯”</p>
+  <p>通关总游戏时长：<b id="endTime">—</b></p>
+  <p class="quote" style="margin-top:24px">—— 按 F5 重新开始 ——</p>
+</div>
+
+
+
+<script>
+// ============================================================
+// 第一部分：对数计数法
+// ============================================================
+function makeNum(m=0, e=0) { return { m, e }; }
+
+function numFrom(x) {
+  if (x === 0) return { m:0, e:0 };
+  let e = Math.floor(Math.log10(Math.abs(x)));
+  let m = x / Math.pow(10, e);
+  if (m >= 10) { m /= 10; e++; }
+  if (m < 1) { m *= 10; e--; }
+  return { m, e };
+}
+
+function numAdd(a, b) {
+  if (a.m === 0) return { m:b.m, e:b.e };
+  if (b.m === 0) return { m:a.m, e:a.e };
+  let [hi, lo] = a.e >= b.e ? [a, b] : [b, a];
+  let diff = hi.e - lo.e;
+  if (diff > 15) return { m:hi.m, e:hi.e };
+  let m = hi.m + lo.m / Math.pow(10, diff);
+  let e = hi.e;
+  if (m >= 10) { m /= 10; e++; }
+  return { m, e };
+}
+
+function numSub(a, b) {
+  if (b.m === 0) return { m:a.m, e:a.e };
+  if (a.m === 0) return { m:0, e:0 };
+  if (a.e < b.e || (a.e === b.e && a.m < b.m)) return { m:0, e:0 };
+  let diff = a.e - b.e;
+  if (diff > 15) return { m:a.m, e:a.e };
+  let m = a.m - b.m / Math.pow(10, diff);
+  if (m <= 0) return { m:0, e:0 };
+  let e = a.e;
+  while (m < 1) { m *= 10; e--; }
+  while (m >= 10) { m /= 10; e++; }
+  return { m, e };
+}
+
+function numMul(a, b) {
+  if (a.m === 0 || b.m === 0) return { m:0, e:0 };
+  let m = a.m * b.m, e = a.e + b.e;
+  while (m >= 10) { m /= 10; e++; }
+  while (m < 1) { m *= 10; e--; }
+  return { m, e };
+}
+
+function numCmp(a, b) {
+  if (a.m === 0 && b.m === 0) return 0;
+  if (a.m === 0) return -1;
+  if (b.m === 0) return 1;
+  if (a.e !== b.e) return a.e - b.e;
+  return a.m - b.m;
+}
+
+// 格式化：显示保留 3 位小数
+function fmt(n) {
+  if (n.m === 0) return '0';
+  let mant = n.m.toFixed(3).replace(/\.?0+$/, '');
+  return `${mant}×10^${n.e}`;
+}
+
+// 格式化普通数字：保留 3 位小数
+function fmtNum(x) {
+  if (x === 0) return '0';
+  if (Math.abs(x) < 0.001) return x.toExponential(2);
+  return parseFloat(x.toFixed(3)).toString();
+}
+
+// ============================================================
+// 第二部分：游戏状态
+// ============================================================
+const S = {
+  // 基础属性（原始值）
+  rawAtk: 15,
+  rawDef: 2,
+  baseHp: 100,
+  // 当前显示值（经伤残等级削减后）
+  atk: 15,
+  def: 2,
+  maxHp: 100,
+  hp: 100,
+  // 棘刺
+  interval: 1.0,
+  firepower: 1.0,
+  range: 2.0,
+  atkTimer: 0,
+  // 怪物
+  monster: null,
+  monsterLv: 1,
+  maxBeaten: 0,
+  dropMul: 1.2,          // 掉落倍率（成就21后变1.3）
+  // 货币
+  money: makeNum(0, 0),
+  // 升级等级
+  lv: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0 },
+  lvRoot: { 1:0, 2:0, 3:0, 4:0, 5:0 },
+  // 进度
+  done: false,
+  stage: 1,              // 1=萌生，2=残根
+  t: 0,
+  dead: false,
+  reviveTimer: 0,
+  mode: 'rest',
+  // 成就
+  ach: { 11:false, 12:false, 13:false, 14:false, 21:false, 22:false, 23:false, 24:false },
+  moneyMultiplier: 1.0,
+  xienianUnlocked: false,
+  atkToHpRate: 12,
+  defToHpRate: 15,
+  // 伤残系统
+  disabilityUnlocked: false,  // 是否购买萌生7
+  disabilityLv: 0,            // 伤残等级
+  disabilityExp: 0,           // 伤残经验
+  disabilityValue: 0,         // 伤残值
+  // 派生值（每帧重算）
+  curMaxHp: 100,              // 含伤残生命增幅的生命上限
+  recoverableHp: 100,         // 可恢复生命上限
+  curAtk: 15,                 // 最终攻击力
+  curDef: 2,                  // 最终防御力
+  curDisabilityValueMax: 0,   // 伤残值上限
+  disabilityDegree: 0,        // 伤残程度
+  damageBonus: 0,             // 伤残程度带来的伤害加成
+  storyUnlocked: {},   // ★ 剧情解锁状态
+  maxMoneyHeld: makeNum(0, 0),   // 曾最多持有的凄残币
+  weavingUnlocked: false,        // 织线是否解锁
+  weavingLv: 0,                  // 萌生之织线等级（残根5）
+  weaving1: 0,                   // 织线·萌生1 当前等级
+  weaving2: 0,                   // 织线·萌生2 当前等级
+  weaving3: 0,                   // 织线·萌生3 当前等级
+};
+
+// ============================================================
+// 第三部分：价格公式
+// ============================================================
+function cost1(n) { return numMul(makeNum(3, 6), numFrom(Math.pow(1.3, n))); }
+function cost2(n) { return numMul(makeNum(1, 5), numFrom(Math.pow(3.1, n))); }
+function cost3(n) { return numMul(makeNum(1, 5), numFrom(Math.pow(1.058, n))); }
+function cost4(n) { return numMul(makeNum(1, 5), numFrom(Math.pow(1.5, n))); }
+function cost5(n) { return numMul(makeNum(1, 5), numFrom(Math.pow(1.25, n))); }
+function cost6(n) { return numMul(makeNum(1, 5), numFrom(Math.pow(1.25, n))); }
+// 残根
+function costR1(n) { return numFrom(Math.pow(10, 5 + 2.5 * n)); }
+function costR2(n) { return numMul(makeNum(1, 7), numFrom(Math.pow(1.15, n))); }
+function costR3(n) { return numMul(makeNum(5, 5), numFrom(Math.pow(1.5, n))); }
+function costR4(n) { return numMul(makeNum(5, 5), numFrom(Math.pow(1.5, n))); }
+function costR5(n) { return numFrom(Math.pow(10, 6.5 + 0.75 * n)); }
+
+// ============================================================
+// 第四部分：伤残系统核心
+// ============================================================
+
+// 重算所有派生值
+function recalc() {
+  // ★ 织线替代：按残根5 等级，决定用织线等级还是手动等级
+  let wlv = S.lvRoot[5] || 0;
+
+  // 计算「有效等级」
+  let effAtkLv = (wlv >= 1) ? S.weaving1 : S.lv[1];
+  let effDefLv = (wlv >= 2) ? S.weaving2 : S.lv[2];
+  let effHpLv  = (wlv >= 3) ? S.weaving3 : S.lv[3];
+
+  // 用有效等级算基础属性
+  S.rawAtk = 15 + effAtkLv;
+  S.rawDef = 2 + effDefLv;
+  let baseHpFromLevel = effHpLv * 10;   // ★ 萌生3 提供的生命值
+
+  // 1. 应用邪念无伤硬上限
+  let atkOver = 0, defOver = 0;
+  if (S.xienianUnlocked) {
+    atkOver = Math.max(0, S.rawAtk - 15);
+    defOver = Math.max(0, S.rawDef - 5);
+    S.atk = Math.min(S.rawAtk, 15);
+    S.def = Math.min(S.rawDef, 5);
+  } else {
+    S.atk = S.rawAtk;
+    S.def = S.rawDef;
+  }
+  let atkRate = S.atkToHpRate + S.lvRoot[3];
+  let defRate = S.defToHpRate + S.lvRoot[4] * 2;
+  let bonusHpFromCap = atkOver * atkRate + defOver * defRate;
+
+  // 2. 基础生命上限 = 100 + 萌生3 + 邪念无伤转化
+  let baseMaxHp = 100 + baseHpFromLevel + bonusHpFromCap;
+
+  // 3. 伤残等级削弱攻防
+  let dLv = S.disabilityLv;
+  if (S.disabilityUnlocked && dLv > 0) {
+    S.curAtk = S.atk * Math.pow(dLv, -0.3);
+    S.curDef = S.def * Math.pow(dLv, -0.25);
+  } else {
+    S.curAtk = S.atk;
+    S.curDef = S.def;
+  }
+
+  // 4. 伤残生命增幅
+  let disabilityHpBonus = 0;
+  if (S.disabilityUnlocked) {
+    disabilityHpBonus = baseMaxHp * 0.10 * dLv;
+  }
+
+  // 5. 生命上限 = 基础 + 伤残增幅
+  S.recoverableHp = baseMaxHp;
+  S.curMaxHp = baseMaxHp + disabilityHpBonus;
+  S.maxHp = S.curMaxHp;
+
+  // 6. 伤残值上限
+  S.curDisabilityValueMax = S.disabilityUnlocked ? dLv : 0;
+  if (S.disabilityValue > S.curDisabilityValueMax) {
+    S.disabilityValue = S.curDisabilityValueMax;
+  }
+
+  // 7. 伤残程度
+  if (S.disabilityUnlocked && S.hp > 0) {
+    let lgMax = Math.log10(S.curMaxHp);
+    let lgCur = Math.log10(Math.max(S.hp, 0.001));
+    S.disabilityDegree = Math.max(0, 10 * (lgMax - lgCur));
+  } else {
+    S.disabilityDegree = 0;
+  }
+  S.damageBonus = S.disabilityDegree * 0.10;
+
+  // 8. 生命值不能超过上限
+  if (S.hp > S.curMaxHp) S.hp = S.curMaxHp;
+}
+
+// 伤残等级升级所需经验 = 当前等级的平方
+function disabilityExpNeeded(lv) {
+  return lv * lv;
+}
+
+// 增加伤残经验
+function addDisabilityExp(amount) {
+  if (!S.disabilityUnlocked) return;
+  if (S.disabilityLv >= 100) return;   // 满级不再积累
+  S.disabilityExp += amount;
+  while (S.disabilityLv < 100) {
+    let need = disabilityExpNeeded(S.disabilityLv + 1);
+    if (S.disabilityExp >= need) {
+      S.disabilityExp -= need;
+      S.disabilityLv++;
+      // ★ 升级时伤残值上限+1，当前伤残值也+1
+      S.curDisabilityValueMax = S.disabilityLv;
+      S.disabilityValue = Math.min(S.disabilityValue + 1, S.curDisabilityValueMax);
+      log(`伤残等级提升至 Lv.${S.disabilityLv}。`, 'hl');
+      // 成就21
+      if (S.disabilityLv >= 10 && !S.ach[21]) {
+        completeAchievement(21);
+      }
+      // 成就23
+      if (S.disabilityLv >= 31 && !S.ach[23]) {
+        completeAchievement(23);
+      }
+    } else {
+      break;
+    }
+  }
+  if (S.disabilityLv >= 100) {
+    S.disabilityExp = 0;
+    log('伤残等级已达上限 100。', 'hl');
+    // ★ 伤残等级满级直接触发终局
+    if (!S.done) {
+      S.stage = 2;
+      win();
+    }
+  }
+
+}
+
+// ============================================================
+// 第五部分：怪物生成
+// ============================================================
+function makeMonster(lv) {
+  let mul = Math.pow(1.1, lv - 1);
+  let dropMul = Math.pow(S.dropMul, lv - 1);
+  return {
+    lv,
+    atk: numFrom(15 * mul),
+    def: numFrom(0),
+    maxHp: numFrom(100 * mul),
+    hp: numFrom(100 * mul),
+    speed: 1.0,
+    interval: 1.0,
+    firepower: 1.0,
+    drop: numFrom(20000 * dropMul),
+    atkTimer: 0
+  };
+}
+
+// 伤害公式
+function calcDamage(atkNum, defNum, firepower) {
+  let diff;
+  if (defNum.m === 0) {
+    diff = atkNum;
+  } else if (atkNum.e - defNum.e > 15) {
+    diff = atkNum;
+  } else {
+    let aVal = atkNum.m * Math.pow(10, atkNum.e);
+    let dVal = defNum.m * Math.pow(10, defNum.e);
+    let raw = aVal - dVal;
+    if (raw < 2) raw = 2;
+    diff = numFrom(raw);
+  }
+  return numMul(diff, numFrom(firepower));
+}
+
+// 独立加成：时间抹除域
+function timeDomainMultiplier() {
+  if (!S.disabilityUnlocked) return 1;
+  let lv = S.lvRoot[1];
+  if (lv === 0) return 1;
+  return Math.pow(1.2, lv);
+}
+
+
+// ============================================================
+// 第六部分：DOM 快捷函数 & 日志
+// ============================================================
+const $ = id => document.getElementById(id);
+
+function log(msg, cls) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = msg;
+  $('log').prepend(d);
+  while ($('log').children.length > 50) $('log').lastChild.remove();
+}
+
+function spawnMonster() {
+  S.monster = makeMonster(S.monsterLv);
+  log(`Lv.${S.monsterLv} 怪物出现。`);
+}
+
+// ============================================================
+// 第七部分：TAB 切换
+// ============================================================
+const TAB_LIST = ['battle', 'upgrade', 'weaving', 'disability', 'achievement', 'story', 'options'];
+let currentTab = 'battle';
+
+function switchTab(tabName) {
+  if (!TAB_LIST.includes(tabName)) return;
+  // 伤残秘境 TAB 未解锁时不可切
+  if (tabName === 'disability' && !S.disabilityUnlocked) return;
+  currentTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.remove('active');
+  });
+  $('tab-' + tabName).classList.add('active');
+
+  // 切过去时渲染对应 TAB
+  if (tabName === 'options') renderOptionsTab();
+  if (tabName === 'achievement') renderAchievementTab();
+  if (tabName === 'upgrade') renderUpgradeTab();
+  if (tabName === 'battle') renderBattle();
+  if (tabName === 'disability') renderDisabilityTab();
+  if (tabName === 'weaving') renderWeavingTab();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => switchTab(btn.dataset.tab);
+});
+
+// Tab 键循环切换（跳过隐藏的 TAB）
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  e.preventDefault();
+  // 构造可见 TAB 列表
+  let visible = TAB_LIST.filter(t => {
+    if (t === 'disability') return S.disabilityUnlocked;
+    if (t === 'weaving') return S.weavingUnlocked;
+    return true;
+  });
+  const idx = visible.indexOf(currentTab);
+  const next = (idx + 1) % visible.length;
+  switchTab(visible[next]);
+});
+
+// ============================================================
+// 第八部分：成就系统
+// ============================================================
+function completeAchievement(id) {
+  if (S.ach[id]) return;
+  S.ach[id] = true;
+  log(`成就完成：${getAchievementName(id)}`, 'hl');
+
+  if (id === 11) {
+    S.money = numAdd(S.money, numFrom(1e5));
+    log('成就奖励：获得 1×10^5 凄残币。', 'hl');
+    checkStoryTrigger('1-1');   // ★ 触发剧情1-1
+  }
+  if (id === 12) {
+    S.moneyMultiplier = 1.1;
+    log('成就奖励：凄残币收入 ×1.1。', 'hl');
+  }
+  if (id === 13) {
+    S.xienianUnlocked = true;
+    $('skill-xienian').style.display = 'block';
+    log('成就奖励：解锁技能【邪念无伤】。', 'hl');
+    checkStoryTrigger('1-2');   // ★ 触发剧情1-2
+  }
+  if (id === 14) {
+    S.disabilityUnlocked = true;
+    $('tabbtn-disability').classList.remove('hidden');
+    $('row-disability-lv').style.display = 'flex';
+    $('row-disability-value').style.display = 'flex';
+    $('row-disability-degree').style.display = 'flex';
+    $('upgrade-single').style.display = 'none';
+    $('upgrade-double').style.display = 'flex';
+    $('ur1').style.display = 'block';
+    $('ur2').style.display = 'block';
+    $('disabilityValuePanel').style.display = 'block';
+    if ($('up7b')) { $('up7b').disabled = true; }
+    log('伤残秘境已解锁。', 'hl');
+    log('提示：按 Tab 键可切换到「伤残秘境」栏目。', 'hl');
+    checkStoryTrigger('2-1');   // ★ 触发剧情2-1
+    // 阶段推进
+    S.stage = 2;
+  }
+  if (id === 21) {
+    S.dropMul = 1.3;
+    log('成就奖励：怪物掉落倍率提升至 1.3。', 'hl');
+  }
+  if (id === 22) {
+    $('ur3').style.display = 'block';
+    $('ur4').style.display = 'block';
+    log('成就奖励：解锁残根升级「邪念无伤·攻」「邪念无伤·防」。', 'hl');
+  }
+  if (id === 23) {
+    S.weavingUnlocked = true;
+    $('tabbtn-weaving').classList.remove('hidden');
+    log('成就奖励：解锁织线。', 'hl');
+    // ★ 解锁时立刻算一次织线等级
+    let budget = S.maxMoneyHeld;
+    let w1 = weavingCalc(cost1, budget);
+    if (S.ach[24]) w1 = Math.floor(w1 * 1.2);
+    let w2 = weavingCalc(cost2, budget);
+    if (S.ach[24]) w2 = Math.floor(w2 * 1.2);
+    let w3 = weavingCalc(cost3, budget);
+    S.weaving1 = w1;
+    S.weaving2 = w2;
+    S.weaving3 = w3;
+  }
+  if (id === 24) {
+    log('成就奖励：前2个织线最终数量 ×1.2。', 'hl');
+    // ★ 重算织线等级，让 ×1.2 生效
+    if (S.weavingUnlocked) {
+      let budget = S.maxMoneyHeld;
+      let w1 = weavingCalc(cost1, budget);
+      w1 = Math.floor(w1 * 1.2);
+      let w2 = weavingCalc(cost2, budget);
+      w2 = Math.floor(w2 * 1.2);
+      let w3 = weavingCalc(cost3, budget);
+      S.weaving1 = w1;
+      S.weaving2 = w2;
+      S.weaving3 = w3;
+    }
+  }
+  // 刷新成就面板
+  renderAchievementTab();
+  renderGoal();
+}
+
+function getAchievementName(id) {
+  const names = {
+    11: '一切的开始',
+    12: '再见，新手村',
+    13: '诶我的攻击力和防御力呢？',
+    14: '伤残秘境欢迎你',
+    21: '再见，伤残秘境的新手村？',
+    22: '恢复速度比土豆^(1/42)还快',
+    23: '距离伤残值更新还剩e0.5小时',
+    24: '等等，伤残秘境哪里来的织者？'
+  };
+  return names[id] || ('成就' + id);
+}
+
+// ============================================================
+// 第九部分：剧情系统
+// ============================================================
+
+// 所有剧情的定义
+// 每条剧情 = 一批剧情片段（数组）
+const STORY_DATA = {
+  '1-1': {
+    stage: '萌生',
+    condition: '完成成就11',
+    title: '一切的开始',
+    lines: [
+      { char: '厄凛娜斯', text: '唔......' },
+      { char: '厄凛娜斯', text: '我这是在哪？' },
+      { char: '厄凛娜斯', text: '没有人，只有......源源不断来袭击的......狂战士？' },
+      { char: '厄凛娜斯', text: '不行，太危险了' },
+      { char: '厄凛娜斯', text: '诶，一座城？' },
+      { char: '厄凛娜斯', text: '我去看看吧' },
+      { char: '伤残', text: '我没在城里见过你啊，你是谁？' },
+      { char: '厄凛娜斯', text: '我......我么？我叫......厄凛娜斯' },
+      { char: '伤残', text: '厄凛娜斯小姐，你既然能走进这座城，就应该有能力生存下来。' },
+      { char: '伤残', text: '我叫伤残，是伤残秘境的主人' },
+      { char: '伤残', text: '你应该没有家吧？我让你住我的伤残秘境，怎么样？' },
+      { char: '厄凛娜斯', text: '可......可以' },
+      { char: '伤残', text: '我们这房间不贵，买个属于自己的小窝小点的要10亿凄残币' },
+      { char: '伤残', text: '给你打个骨折吧，100万凄残币' },
+      { char: '厄凛娜斯', text: '不是，多少？' },
+      { char: '厄凛娜斯', text: '看来要自己攒一笔钱了' }
+    ]
+  },
+  '1-2': {
+    stage: '萌生',
+    condition: '完成成就13',
+    title: '奇怪的力量',
+    lines: [
+      { char: '厄凛娜斯', text: '奇怪，感觉力量并没有变强' },
+      { char: '厄凛娜斯', text: '我的力量训练为什么强化的会是体质啊！！！' }
+    ]
+  },
+  '2-1': {
+    stage: '残根',
+    condition: '购买升级 · 萌生7',
+    title: '初入秘境',
+    lines: [
+      { char: '伤残', text: '欢迎来到伤残秘境，免费送你一针%#%￥@#针剂......' },
+      { char: '厄凛娜斯', text: '我，又醒了？' },
+      { char: '厄凛娜斯', text: '这是......伤残让我低价买下的小屋？' },
+      { char: '厄凛娜斯', text: '伤残还挺好心' },
+      { char: '厄凛娜斯', text: '家具齐全，感觉还是新的' },
+      { char: '厄凛娜斯', text: '不过她到底往我的身体里注射了什么啊！！！' },
+      { char: '伤残', text: '呦，你醒了？' },
+      { char: '厄凛娜斯', text: '你一直在等我醒来么？' },
+      { char: '伤残', text: '也是，也不是' },
+      { char: '厄凛娜斯', text: '那你想干什么？' },
+      { char: '伤残', text: '磨练你的意志' },
+      { char: '伤残', text: '凄惨秘境那帮狂战士仗着自己凶猛就大范围扩大自己的领地' },
+      { char: '伤残', text: '你就拿外面营地里的那几个练练手吧' },
+      { char: '厄凛娜斯', text: '啊，上来就这么高强度？' },
+      { char: '伤残', text: '不会叠甲的小卡拉米罢了' }
+    ]
+  },
+  '2-2': {
+    stage: '残根',
+    condition: '购买升级 · 残根3或升级 · 残根4',
+    title: '长命伤残',
+    lines: [
+      { char: '厄凛娜斯', text: '突然感觉自己好耐造啊' },
+      { char: '厄凛娜斯', text: '这真的不是幻觉么' }
+    ]
+  }
+};
+
+// 角色颜色
+const STORY_CHAR_COLORS = {
+  '厄凛娜斯': '#c89ae8',   // 紫色
+  '伤残': '#6ad58a'        // ★ 和紫色等亮度的绿色
+};
+
+// 当前正在播放的剧情状态
+let storyPlaying = null;   // { key, index }
+let storyWasMode = 'rest'; // 进入剧情前的模式，退出后恢复
+
+// 播放剧情
+function playStory(key) {
+  if (!STORY_DATA[key]) return;
+  if (storyPlaying) return;   // 已经在播了
+
+  // 保存当前模式，并切换到休息
+  storyWasMode = S.mode;
+  if (S.mode !== 'rest') {
+    setMode('rest');
+  }
+
+  storyPlaying = { key, index: 0 };
+  $('storyOverlay').style.display = 'flex';
+  renderStory();
+}
+
+// 渲染当前剧情片段
+function renderStory() {
+  if (!storyPlaying) return;
+  const data = STORY_DATA[storyPlaying.key];
+  const line = data.lines[storyPlaying.index];
+  const total = data.lines.length;
+
+  // 角色名
+  $('storyChar').textContent = line.char;
+  $('storyChar').style.color = STORY_CHAR_COLORS[line.char] || '#c89ae8';
+
+  // 台词
+  $('storyText').textContent = line.text;
+
+  // ★ 根据角色切换整个窗口的样式（② 会用到）
+  const box = $('storyBox');
+  box.classList.remove('char-shangcan');
+  if (line.char === '伤残') {
+    box.classList.add('char-shangcan');
+  }
+
+  // 按钮显示逻辑
+  // 上一片：不是第一片才显示
+  $('storyPrev').style.display = storyPlaying.index > 0 ? 'block' : 'none';
+  // 下一片：不是最后一片才显示
+  $('storyNext').style.display = storyPlaying.index < total - 1 ? 'block' : 'none';
+  // 完成：最后一片才显示
+  $('storyDone').style.display = storyPlaying.index === total - 1 ? 'block' : 'none';
+
+  // 动态设置弹窗大小
+  resizeStoryBox();
+}
+
+// 根据屏幕分辨率调整弹窗大小
+function resizeStoryBox() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const minSide = Math.min(w, h);
+  const size = Math.max(minSide * 0.25, 200);
+  const box = $('storyBox');
+  box.style.width = size + 'px';
+  box.style.height = size + 'px';
+}
+
+// 上一片
+$('storyPrev').onclick = () => {
+  if (!storyPlaying) return;
+  if (storyPlaying.index > 0) {
+    storyPlaying.index--;
+    renderStory();
+  }
+};
+
+// 下一片
+$('storyNext').onclick = () => {
+  if (!storyPlaying) return;
+  const data = STORY_DATA[storyPlaying.key];
+  if (storyPlaying.index < data.lines.length - 1) {
+    storyPlaying.index++;
+    renderStory();
+  }
+};
+
+// 完成
+$('storyDone').onclick = () => {
+  if (!storyPlaying) return;
+  // 标记已解锁
+  S.storyUnlocked[storyPlaying.key] = true;
+  // 清空状态
+  storyPlaying = null;
+  $('storyOverlay').style.display = 'none';
+  // 恢复原模式
+  if (storyWasMode !== S.mode) {
+    setMode(storyWasMode);
+  }
+  // 保存存档状态（可选，自动存 local）
+  saveStoryUnlocked();
+  // 刷新剧情回顾列表
+  renderStoryReview();
+};
+
+// 剧情触发检查
+function checkStoryTrigger(key) {
+  // 已解锁的不再自动触发
+  if (S.storyUnlocked[key]) return;
+  // 如果正在播剧情，不打断
+  if (storyPlaying) return;
+  playStory(key);
+}
+
+// 窗口大小变化时重新调整弹窗
+window.addEventListener('resize', () => {
+  if (storyPlaying) resizeStoryBox();
+});
+
+// 导入存档时自动判定解锁（不弹窗，只解锁回顾）
+function autoUnlockStories() {
+  // 1-1：完成成就11
+  if (S.ach[11] && !S.storyUnlocked['1-1']) {
+    S.storyUnlocked['1-1'] = true;
+  }
+  // 1-2：完成成就13
+  if (S.ach[13] && !S.storyUnlocked['1-2']) {
+    S.storyUnlocked['1-2'] = true;
+  }
+  // 2-1：购买萌生7（成就14）
+  if (S.ach[14] && !S.storyUnlocked['2-1']) {
+    S.storyUnlocked['2-1'] = true;
+  }
+  // 2-2：购买残根3或残根4
+  if ((S.lvRoot[3] >= 1 || S.lvRoot[4] >= 1) && !S.storyUnlocked['2-2']) {
+    S.storyUnlocked['2-2'] = true;
+  }
+}
+
+// ============================================================
+// 第十部分：剧情回顾
+// ============================================================
+
+// 渲染剧情回顾列表
+function renderStoryReview() {
+  const list = $('storyReviewList');
+  if (!list) return;
+  let html = '';
+  for (let key in STORY_DATA) {
+    const data = STORY_DATA[key];
+    const unlocked = S.storyUnlocked[key];
+    if (unlocked) {
+      html += `<div class="story-review-item" data-key="${key}">
+        <div class="sr-title">${key}　${data.title}</div>
+        <div class="sr-info">阶段：${data.stage}　｜　触发条件：${data.condition}</div>
+      </div>`;
+    } else {
+      html += `<div class="story-review-item locked">
+        <div class="sr-title">${key}　？？？</div>
+        <div class="sr-info">阶段：${data.stage}　｜　触发条件：${data.condition}</div>
+      </div>`;
+    }
+  }
+  list.innerHTML = html;
+  // 给已解锁的项绑定点击
+  list.querySelectorAll('.story-review-item:not(.locked)').forEach(el => {
+    el.onclick = () => {
+      const key = el.dataset.key;
+      playStory(key);
+    };
+  });
+}
+
+// 剧情解锁状态的本地存储（防止刷新丢失，虽然存档也会存）
+function saveStoryUnlocked() {
+  try {
+    localStorage.setItem('ellinuss_story_unlocked', JSON.stringify(S.storyUnlocked));
+  } catch (e) {}
+}
+
+function loadStoryUnlocked() {
+  try {
+    const s = localStorage.getItem('ellinuss_story_unlocked');
+    if (s) return JSON.parse(s);
+  } catch (e) {}
+  return {};
+}
+
+// ============================================================
+// 第十一部分：模式切换
+// ============================================================
+function setMode(m) {
+  if (S.mode === m) return;
+  S.mode = m;
+  if (m === 'fight') {
+    $('modeFight').classList.add('active');
+    $('modeRest').classList.remove('active');
+    log('切换到战斗模式。');
+    completeAchievement(11);
+  } else {
+    $('modeRest').classList.add('active');
+    $('modeFight').classList.remove('active');
+    log('切换到休息模式。', 'heal');
+  }
+  renderBattle();
+}
+
+$('modeFight').onclick = () => setMode('fight');
+$('modeRest').onclick = () => setMode('rest');
+
+// ============================================================
+// 第十二部分：战斗逻辑
+// ============================================================
+
+// 玩家攻击怪物
+function playerAttack(m) {
+  // 最终攻击力 = curAtk（已含伤残削弱）
+  // 伤害 = max(攻击-防御, 2) × 火力 × 时间域 × (1+伤残程度加成)
+  let dmg = calcDamage(numFrom(S.curAtk), m.def, S.firepower);
+  // 独立加成：时间抹除域
+  let td = timeDomainMultiplier();
+  if (td !== 1) dmg = numMul(dmg, numFrom(td));
+  // 伤残程度加成
+  if (S.damageBonus > 0) dmg = numMul(dmg, numFrom(1 + S.damageBonus));
+
+  m.hp = numSub(m.hp, dmg);
+  if (numCmp(m.hp, makeNum(0,0)) <= 0) {
+    // 掉落
+    let drop = m.drop;
+    if (S.moneyMultiplier !== 1.0) {
+      drop = numMul(drop, numFrom(S.moneyMultiplier));
+    }
+    S.money = numAdd(S.money, drop);
+    // ★ 更新曾最多持有
+    if (numCmp(S.money, S.maxMoneyHeld) > 0) {
+      S.maxMoneyHeld = { m: S.money.m, e: S.money.e };
+      if (S.weavingUnlocked) {
+        // 重算织线等级
+        let budget = S.maxMoneyHeld;
+        let w1 = weavingCalc(cost1, budget);
+        if (S.ach[24]) w1 = Math.floor(w1 * 1.2);
+        let w2 = weavingCalc(cost2, budget);
+        if (S.ach[24]) w2 = Math.floor(w2 * 1.2);
+        let w3 = weavingCalc(cost3, budget);
+        S.weaving1 = w1;
+        S.weaving2 = w2;
+        S.weaving3 = w3;
+        // 属性替代由 recalc() 处理
+        renderWeavingTab();
+      }
+    }
+    log(`击杀 Lv.${m.lv} 怪物，获得 ${fmt(drop)} 凄残币。`, 'hl');
+
+    if (m.lv > S.maxBeaten) {
+      S.maxBeaten = m.lv;
+      log(`已击败最高等级更新为 Lv.${S.maxBeaten}。`, 'hl');
+    }
+    if (m.lv >= 10) completeAchievement(12);
+    // 萌生7 首次达到 1e7 时可购买（在 render 里控制显示）
+    spawnMonster();
+    return true;
+  }
+  return false;
+}
+
+// 怪物攻击玩家
+function monsterAttack() {
+  const m = S.monster;
+  let dmg = calcDamage(m.atk, numFrom(S.curDef), m.firepower);
+  // 时间抹除域对怪物伤害也生效
+  let td = timeDomainMultiplier();
+  if (td !== 1) dmg = numMul(dmg, numFrom(td));
+  let dmgVal = dmg.m * Math.pow(10, dmg.e);
+
+  // 伤残经验：每承受 1 点伤害 = 1 经验（含伤残值抵挡部分）
+  addDisabilityExp(dmgVal);
+
+  // 先扣血
+  if (S.hp > dmgVal) {
+    S.hp -= dmgVal;
+  } else {
+    // 伤害超过当前生命，尝试用伤残值抵挡
+    let need = dmgVal - (S.hp - 1);   // 让生命刚好剩 1 点所需补的血
+    if (need < 0) need = 0;
+    // 每 1 伤残值 → 1% 生命上限
+    let valuePerPoint = S.curMaxHp * 0.01;
+    let cost = need / valuePerPoint;
+    if (S.disabilityValue >= cost) {
+      // 够抵挡
+      S.disabilityValue -= cost;
+      S.hp = 1;
+    } else {
+      // 不够，死亡
+      S.hp = 0;
+      S.dead = true;
+      S.reviveTimer = 10;
+      log(`厄凛娜斯倒下了。10 秒后复活。`, 'dmg');
+      $('reviveMask').style.display = 'flex';
+      return true;
+    }
+  }
+  return false;
+}
+
+// 复活
+function revive() {
+  S.dead = false;
+  // ★ 复活时生命值回满到「可恢复上限」
+  recalc();                          // 先重算上限
+  S.hp = S.recoverableHp;            // 直接设为可恢复上限
+  // ★ 复活回满伤残值
+  if (S.disabilityUnlocked) {
+    S.disabilityValue = S.disabilityLv;
+  }
+  S.atkTimer = 0;
+  $('reviveMask').style.display = 'none';
+  S.monsterLv = Math.max(1, S.maxBeaten);
+  S.mode = 'fight';
+  $('modeFight').classList.add('active');
+  $('modeRest').classList.remove('active');
+  spawnMonster();
+  log(`厄凛娜斯复活。当前怪物等级 Lv.${S.monsterLv}，战斗模式。`, 'hl');
+  completeAchievement(11);
+}
+
+// 休息 tick
+function restTick(dt) {
+  // 基础 20% + 快速休息（每级5%）+ 迅速休息（每级25%）
+  let rate = 0.20 + S.lv[6] * 0.05 + S.lvRoot[2] * 0.25;
+  // 回血只回到可恢复上限
+  if (S.hp < S.recoverableHp) {
+    S.hp = Math.min(S.recoverableHp, S.hp + S.recoverableHp * rate * dt);
+  }
+  // 伤残值回复：速度为生命恢复的 1/10
+  if (S.disabilityUnlocked) {
+    let valueRate = rate * 0.1;
+    S.disabilityValue = Math.min(S.curDisabilityValueMax, S.disabilityValue + S.curDisabilityValueMax * valueRate * dt);
+  }
+  // 怪物回血
+  const m = S.monster;
+  if (m) {
+    const heal = numMul(m.maxHp, numFrom(rate * dt));
+    m.hp = numAdd(m.hp, heal);
+    if (numCmp(m.hp, m.maxHp) > 0) m.hp = { m: m.maxHp.m, e: m.maxHp.e };
+  }
+}
+
+// 主 tick
+function tick(dt) {
+  if (S.done) return;
+
+  if (S.dead) {
+    S.reviveTimer -= dt;
+    if (S.reviveTimer <= 0) revive();
+    renderBattle();
+    return;
+  }
+
+  S.t += dt;
+
+  const m = S.monster;
+  if (!m) return;
+
+  // 每帧重算派生值
+  recalc();
+
+  // 休息模式
+  if (S.mode === 'rest') {
+    restTick(dt);
+    renderBattle();
+    return;
+  }
+
+  // 战斗模式
+  S.atkTimer += dt;
+  while (S.atkTimer >= S.interval) {
+    S.atkTimer -= S.interval;
+    if (playerAttack(m)) return;
+  }
+
+  const firstTime = S.range / m.speed;
+  m.atkTimer += dt;
+  if (m.atkTimer >= firstTime) {
+    const elapsed = m.atkTimer - firstTime;
+    if (elapsed >= m.interval) {
+      m.atkTimer -= m.interval;
+      if (monsterAttack()) return;
+    }
+  }
+
+  renderBattle();
+}
+
+// 通关
+function win() {
+  S.done = true;
+  $('end').style.display = 'flex';
+  $('endTime').textContent = formatDuration(S.t);
+}
+
+// ============================================================
+// 第十三部分：渲染
+// ============================================================
+
+// 战斗 TAB 每帧更新
+function renderBattle() {
+  const m = S.monster;
+
+  // 阶段横条
+  renderGoal();
+
+  $('s-money').textContent = fmt(S.money);
+  // 攻击力：显示公式+结果，伤残等级部分绿色
+  if (S.disabilityUnlocked && S.disabilityLv > 0) {
+    let dLv = S.disabilityLv;
+    $('s-atk').innerHTML = `${S.atk}<span class="neg">×${dLv}^-0.3</span>=${fmtNum(S.curAtk)}`;
+    $('s-def').innerHTML = `${S.def}<span class="neg">×${dLv}^-0.25</span>=${fmtNum(S.curDef)}`;
+  } else {
+    $('s-atk').textContent = fmtNum(S.curAtk);
+    $('s-def').textContent = fmtNum(S.curDef);
+  }
+  // 生命值：(当前/可恢复上限)/生命上限
+  $('s-hp').textContent = `(${fmtNum(S.hp)}/${fmtNum(S.recoverableHp)})/${fmtNum(S.curMaxHp)}`;
+  $('s-first').textContent = (S.range / (m ? m.speed : 1)).toFixed(1) + 's';
+
+  // 伤残相关行
+  if (S.disabilityUnlocked) {
+    let lvText;
+    if (S.disabilityLv >= 100) {
+      lvText = `Lv.100/100，EXP∞`;
+    } else {
+      let need = disabilityExpNeeded(S.disabilityLv + 1);
+      lvText = `Lv.${S.disabilityLv}/100，EXP${fmtNum(S.disabilityExp)}/${need}`;
+    }
+    $('s-disability-lv').textContent = lvText;
+    $('s-disability-value').textContent = `${fmtNum(S.disabilityValue)}/${S.curDisabilityValueMax}`;
+    let degree = S.disabilityDegree;
+    let bonus = (S.damageBonus * 100).toFixed(1);
+    $('s-disability-degree').textContent = `${fmtNum(degree)}→+${bonus}%`;
+  }
+
+  // 技能面板
+  $('sk-fp').textContent = S.firepower.toFixed(1);
+  $('sk-int').textContent = S.interval.toFixed(1) + 's';
+  $('sk-range').textContent = S.range.toFixed(1) + 'm';
+  if (m) {
+    let d = calcDamage(numFrom(S.curAtk), m.def, S.firepower);
+    let td = timeDomainMultiplier();
+    if (td !== 1) d = numMul(d, numFrom(td));
+    if (S.damageBonus > 0) d = numMul(d, numFrom(1 + S.damageBonus));
+    if (d.e < 4) {
+      $('sk-dmg').textContent = fmtNum(d.m * Math.pow(10, d.e));
+    } else {
+      $('sk-dmg').textContent = fmt(d);
+    }
+  }
+
+  if (S.dead) {
+    $('reviveCd').textContent = Math.ceil(S.reviveTimer);
+  }
+
+  const lvCap = Math.max(1, S.maxBeaten + 1);
+  $('curLv').textContent = S.monsterLv;
+  $('lvCap').textContent = lvCap;
+  $('lvInput').max = lvCap;
+  if (parseInt($('lvInput').value, 10) > lvCap) {
+    $('lvInput').value = lvCap;
+  }
+
+  if (m) {
+    $('m-atk').textContent = fmt(m.atk);
+    $('m-def').textContent = fmt(m.def);
+    $('m-hp').textContent = `${fmt(m.hp)} / ${fmt(m.maxHp)}`;
+    let shownDrop = m.drop;
+    if (S.moneyMultiplier !== 1.0) {
+      shownDrop = numMul(m.drop, numFrom(S.moneyMultiplier));
+    }
+    $('m-drop').textContent = fmt(shownDrop);
+    let pct = (m.hp.m * Math.pow(10, m.hp.e)) / (m.maxHp.m * Math.pow(10, m.maxHp.e)) * 100;
+    if (!isFinite(pct)) pct = 0;
+    pct = Math.max(0, Math.min(100, pct));
+    $('mhpBar').style.width = pct + '%';
+    $('mhpTxt').textContent = `${fmt(m.hp)} / ${fmt(m.maxHp)}`;
+  }
+
+  // 玩家血条：显示 hp/可恢复上限
+  let hpPct = Math.max(0, Math.min(100, S.hp / S.recoverableHp * 100));
+  $('hpBar').style.width = hpPct + '%';
+  $('hpTxt').textContent = `${fmtNum(S.hp)} / ${fmtNum(S.recoverableHp)}`;
+
+  // ★ 伤残值面板
+  if (S.disabilityUnlocked) {
+    $('disabilityValuePanel').style.display = 'block';
+    let dvMax = S.curDisabilityValueMax;
+    let dvPct = dvMax > 0 ? Math.max(0, Math.min(100, S.disabilityValue / dvMax * 100)) : 0;
+    $('dvBar').style.width = dvPct + '%';
+    $('dvTxt').textContent = `${fmtNum(S.disabilityValue)} / ${dvMax}`;
+  } else {
+    $('disabilityValuePanel').style.display = 'none';
+  }
+
+  // 邪念无伤技能卡
+  if (S.xienianUnlocked) {
+    $('skill-xienian').style.display = 'block';
+    let atkRate = S.atkToHpRate + S.lvRoot[3];
+    let defRate = S.defToHpRate + S.lvRoot[4] * 2;
+    $('xienian-desc').textContent =
+      `厄凛娜斯的攻击力硬上限为 15，因硬上限而损失的攻击力按照每 1 攻击力 → ${atkRate} 生命值的比例转化为生命值。` +
+      `厄凛娜斯的防御力硬上限为 5，因硬上限而损失的防御力按照每 1 防御力 → ${defRate} 生命值的比例转化为生命值。`;
+  }
+}
+
+// 阶段横条
+function renderGoal() {
+  // 终局条件（固定）
+  let finalGoal = `终局：获得 <b>100</b> 级伤残等级`;
+  // 当前阶段
+  let stageText = '';
+  if (S.stage === 1) {
+    if (numCmp(S.money, numFrom(1e7)) >= 0) {
+      // 第一阶段完成，提示去升级
+      stageText = `<span class="done">第一阶段 · 萌生：完成</span>，<span style="color:#ff6ad5">看看升级界面吧</span>`;
+    } else {
+      stageText = `第一阶段 · 萌生：持有 <b>10^7</b> 凄残币`;
+    }
+  } else {
+    // 第二阶段
+    if (S.disabilityLv >= 100) {
+      stageText = `<span class="done">第二阶段 · 残根：完成</span>`;
+    } else {
+      stageText = `第二阶段 · 残根：获得 <b>100</b> 级伤残等级（当前 ${S.disabilityLv}/100）`;
+    }
+  }
+  // 合并成一行
+  $('goal1').innerHTML = finalGoal + ' &nbsp;|&nbsp; ' + stageText;
+  $('goal2').innerHTML = '';   // 第二行清空
+}
+
+// 升级 TAB
+function renderUpgradeTab() {
+  // 决定是否显示两栏
+  if (S.disabilityUnlocked) {
+    $('upgrade-single').style.display = 'none';
+    $('upgrade-double').style.display = 'flex';
+  }
+  // 萌生7 显示条件：首次达到 1e7 且未购买
+  let show7 = numCmp(S.money, numFrom(1e7)) >= 0 || S.lv[7] > 0 || S.disabilityUnlocked;
+  if (show7 && !S.disabilityUnlocked) {
+    if ($('up7')) $('up7').style.display = 'block';
+    if ($('up7b')) $('up7b').style.display = 'block';
+  }
+
+  // 更新萌生升级（两套按钮同步）
+  const costs = {
+    1: cost1(S.lv[1]),
+    2: cost2(S.lv[2]),
+    3: cost3(S.lv[3]),
+    4: cost4(S.lv[4]),
+    5: cost5(S.lv[5]),
+    6: cost6(S.lv[6])
+  };
+  // ★ 织线替代：按残根5 等级，决定用哪个价格
+  let wlv = S.lvRoot[5] || 0;
+
+  // 单栏版
+  for (let i = 1; i <= 6; i++) {
+    let replaced = (i <= 3 && wlv >= i);   // 织线i 是否生效
+    let shownCost = costs[i];              // 默认显示手动价格
+    if (replaced) {
+      // 织线生效：显示下一个织线等级的价格
+      let wLv = S['weaving' + i];
+      if (i === 1) shownCost = cost1(wLv);
+      if (i === 2) shownCost = cost2(wLv);
+      if (i === 3) shownCost = cost3(wLv);
+    }
+    if ($('c' + i)) $('c' + i).textContent = fmt(shownCost);
+    if ($('l' + i)) $('l' + i).textContent = replaced ? ('织线 Lv.' + S['weaving' + i]) : ('Lv.' + S.lv[i]);
+    // 织线生效的按钮禁用
+    if (replaced) {
+      if ($('up' + i)) $('up' + i).disabled = true;
+      continue;
+    }
+    let canBuy = numCmp(S.money, costs[i]) >= 0;
+    if (i === 4 && S.lv[4] >= 5) canBuy = false;
+    if (i === 5 && S.lv[5] >= 15) canBuy = false;
+    if (i === 6 && S.lv[6] >= 6) canBuy = false;
+    if ($('up' + i)) $('up' + i).disabled = !canBuy;
+  }
+
+  // 两栏版
+  for (let i = 1; i <= 6; i++) {
+    let replaced = (i <= 3 && wlv >= i);
+    let shownCost = costs[i];
+    if (replaced) {
+      let wLv = S['weaving' + i];
+      if (i === 1) shownCost = cost1(wLv);
+      if (i === 2) shownCost = cost2(wLv);
+      if (i === 3) shownCost = cost3(wLv);
+    }
+    if ($('c' + i + 'b')) $('c' + i + 'b').textContent = fmt(shownCost);
+    if ($('l' + i + 'b')) $('l' + i + 'b').textContent = replaced ? ('织线 Lv.' + S['weaving' + i]) : ('Lv.' + S.lv[i]);
+    if (replaced) {
+      if ($('up' + i + 'b')) $('up' + i + 'b').disabled = true;
+      continue;
+    }
+    let canBuy = numCmp(S.money, costs[i]) >= 0;
+    if (i === 4 && S.lv[4] >= 5) canBuy = false;
+    if (i === 5 && S.lv[5] >= 15) canBuy = false;
+    if (i === 6 && S.lv[6] >= 6) canBuy = false;
+    if ($('up' + i + 'b')) $('up' + i + 'b').disabled = !canBuy;
+  }
+
+  // 萌生7 购买状态
+  if (S.disabilityUnlocked) {
+    if ($('up7')) $('up7').disabled = true;
+    if ($('up7b')) $('up7b').disabled = true;
+  } else {
+    let canBuy7 = numCmp(S.money, numFrom(1e7)) >= 0;
+    if ($('up7')) $('up7').disabled = !canBuy7;
+    if ($('up7b')) $('up7b').disabled = !canBuy7;
+  }
+
+  // 残根升级
+  const costsR = {
+    1: costR1(S.lvRoot[1]),
+    2: costR2(S.lvRoot[2]),
+    3: costR3(S.lvRoot[3]),
+    4: costR4(S.lvRoot[4])
+  };
+  for (let i = 1; i <= 4; i++) {
+    if ($('cr' + i)) $('cr' + i).textContent = fmt(costsR[i]);
+    if ($('lr' + i)) $('lr' + i).textContent = 'Lv.' + S.lvRoot[i];
+    let canBuy = numCmp(S.money, costsR[i]) >= 0;
+    if (i === 2 && S.lvRoot[2] >= 18) canBuy = false;
+    if (i === 3 && S.lvRoot[3] >= 11) canBuy = false;
+    if (i === 4 && S.lvRoot[4] >= 10) canBuy = false;
+    if ($('ur' + i)) $('ur' + i).disabled = !canBuy;
+  }
+  if ($('cr5')) $('cr5').textContent = fmt(costR5(S.lvRoot[5]));
+  if ($('lr5')) $('lr5').textContent = 'Lv.' + S.lvRoot[5];
+  if ($('ur5')) {
+    let canBuy = numCmp(S.money, costR5(S.lvRoot[5])) >= 0;
+    if (S.lvRoot[5] >= 3) canBuy = false;
+    $('ur5').disabled = !canBuy;
+  }
+  if (S.ach[23]) {
+    $('ur5').style.display = 'block';
+  }
+
+  // 成就13 描述动态变化
+  if (S.xienianUnlocked) {
+    let atkRate = S.atkToHpRate + S.lvRoot[3];
+    let defRate = S.defToHpRate + S.lvRoot[4] * 2;
+    let d1 = `攻击力+1 → 生命值+${atkRate}（【邪念无伤】攻击力转化率）`;
+    let d2 = `防御力+1 → 生命值+${defRate}（【邪念无伤】防御力转化率）`;
+    if ($('up1')) $('up1').querySelector('.desc').textContent = d1;
+    if ($('up2')) $('up2').querySelector('.desc').textContent = d2;
+    if ($('up1b')) $('up1b').querySelector('.desc').textContent = d1;
+    if ($('up2b')) $('up2b').querySelector('.desc').textContent = d2;
+  }
+}
+
+// 成就 TAB
+function renderAchievementTab() {
+  // 所有成就的定义
+  const ALL_ACH = [
+    { id: 11, name: '一切的开始', cond: '切换战斗模式。', reward: '获得 1×10^5 凄残币。' },
+    { id: 12, name: '再见，新手村', cond: '击败 1 次 10 级怪物。', reward: '凄残币收入 ×1.1。' },
+    { id: 13, name: '诶我的攻击力和防御力呢？', cond: '购买 1 次「攻击力+1」或 4 次「防御力+1」。', reward: '解锁技能【邪念无伤】。' },
+    { id: 14, name: '伤残秘境欢迎你', cond: '购买升级 · 萌生「伤残秘境」。', reward: '解锁伤残等级和伤残程度。' },
+    { id: 21, name: '再见，伤残秘境的新手村？', cond: '伤残等级到达 10 级。', reward: '怪物每升 1 级凄残币倍率 1.2→1.3。' },
+    { id: 22, name: '恢复速度比土豆^(1/42)还快', cond: '升满「迅速休息」。', reward: '解锁两个特别好的升级。' },
+    { id: 23, name: '距离伤残值更新还剩e0.5小时', cond: '伤残等级到达 31 级。', reward: '解锁织线。' },
+    { id: 24, name: '等等，伤残秘境哪里来的织者？', cond: '解锁全部织线 · 萌生（萌生之织线 Lv.3）。', reward: '前2个织线最终数量 ×1.2。' }
+  ];
+  // 按 id 排序：11,12,13,14,21,22...
+  ALL_ACH.sort((a,b) => a.id - b.id);
+  // 生成卡片 HTML
+  let html = '';
+  for (let a of ALL_ACH) {
+    let done = S.ach[a.id];
+    html += `<div class="achievement ${done?'done':''}" id="ach-${a.id}">
+      <div class="ach-name">成就${a.id}：${a.name}${done?'<span class="ach-done-tag">✔</span>':''}</div>
+      <div class="ach-line">条件：${a.cond}</div>
+      <div class="ach-line">奖励：${a.reward}</div>
+    </div>`;
+  }
+  $('achGrid').innerHTML = html;
+}
+
+// 选项 TAB
+function renderOptionsTab() {
+  const m = S.monster;
+  $('o-money').textContent = fmt(S.money);
+  $('o-atk').textContent = fmtNum(S.curAtk);
+  $('o-def').textContent = fmtNum(S.curDef);
+  $('o-hp').textContent = `${fmtNum(S.hp)} / ${fmtNum(S.curMaxHp)}`;
+  $('o-first').textContent = (S.range / (m ? m.speed : 1)).toFixed(1) + 's';
+  $('o-stage').textContent = S.stage === 1 ? '第一阶段 · 萌生' : '第二阶段 · 残根';
+  $('o-goal').textContent = S.stage === 1 ? '10^7 凄残币' : '100 级伤残等级';
+  $('playTime').textContent = formatDuration(S.t);
+  $('saveCount').textContent = getSaveCount();
+}
+
+// 伤残秘境 TAB
+function renderDisabilityTab() {
+  if (!S.disabilityUnlocked) return;
+  let dLv = S.disabilityLv;
+  // 左1：生命值变化
+  $('df-hp').innerHTML = `+10%×${dLv} = <b>+${(10*dLv).toFixed(1)}%</b>`;
+  // 左2：伤残值
+  $('df-value').innerHTML = `${dLv}伤残等级 = <b>${dLv}伤残值</b>`;
+  // 右1：攻击力变化
+  let atkMul = dLv > 0 ? Math.pow(dLv, -0.3) : 1;
+  $('df-atk').innerHTML = `攻击力×${dLv}^-0.3 = ×<b>${atkMul.toFixed(4)}</b>`;
+  // 右2：防御力变化
+  let defMul = dLv > 0 ? Math.pow(dLv, -0.25) : 1;
+  $('df-def').innerHTML = `防御力×${dLv}^-0.25 = ×<b>${defMul.toFixed(4)}</b>`;
+  // 伤残程度
+  $('df-degree').innerHTML =
+    `10×(lg(${fmtNum(S.curMaxHp)})-lg(${fmtNum(S.hp)})) = <b>${fmtNum(S.disabilityDegree)}</b>，伤害+${(S.damageBonus*100).toFixed(1)}%`;
+}
+
+function formatDuration(sec) {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const mi = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  const ms = Math.floor((sec - Math.floor(sec)) * 1000);
+  return `${d}d ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(3,'0')}`;
+}
+
+// ============================================================
+// 第十四部分：购买升级
+// ============================================================
+function buy(idx) {
+  const n = S.lv[idx];
+  let cost;
+  if (idx === 1) cost = cost1(n);
+  else if (idx === 2) cost = cost2(n);
+  else if (idx === 3) cost = cost3(n);
+  else if (idx === 4) cost = cost4(n);
+  else if (idx === 5) cost = cost5(n);
+  else if (idx === 6) cost = cost6(n);
+
+  if (numCmp(S.money, cost) < 0) return;
+  if (idx === 4 && S.lv[4] >= 5) return;
+  if (idx === 5 && S.lv[5] >= 15) return;   // ★ 火力上限 15
+  if (idx === 6 && S.lv[6] >= 6) return;
+
+  S.money = numSub(S.money, cost);
+  S.lv[idx]++;
+
+  if (idx === 1) { S.rawAtk += 1; log('攻击力 +1。'); }
+  if (idx === 2) { S.rawDef += 1; log('防御力 +1。'); }
+  if (idx === 3) { log('生命值 +10。'); }
+  if (idx === 4) { S.interval = Math.max(0.5, S.interval - 0.1); log('棘刺间隔 -0.1s。'); }
+  if (idx === 5) { S.firepower += 0.1; log('棘刺火力 +0.1。'); }
+  if (idx === 6) { log(`快速休息 Lv.${S.lv[6]}。`); }
+
+  if (S.lv[1] >= 1 || S.lv[2] >= 4) completeAchievement(13);
+  recalc();
+  renderUpgradeTab();
+  renderBattle();
+}
+
+// 购买伤残秘境
+function buyDisability() {
+  if (S.disabilityUnlocked) return;
+  if (numCmp(S.money, numFrom(1e7)) < 0) return;
+  S.money = numSub(S.money, numFrom(1e7));
+  S.lv[7] = 1;
+  completeAchievement(14);
+  recalc();
+  renderUpgradeTab();
+  renderBattle();
+}
+
+// 购买残根
+function buyRoot(idx) {
+  const n = S.lvRoot[idx];
+  let cost;
+  if (idx === 1) cost = costR1(n);
+  else if (idx === 2) cost = costR2(n);
+  else if (idx === 3) cost = costR3(n);
+  else if (idx === 4) cost = costR4(n);
+  else if (idx === 5) cost = costR5(n);
+
+  if (numCmp(S.money, cost) < 0) return;
+  if (idx === 2 && S.lvRoot[2] >= 18) return;
+  if (idx === 3 && S.lvRoot[3] >= 11) return;
+  if (idx === 4 && S.lvRoot[4] >= 10) return;
+  if (idx === 5 && S.lvRoot[5] >= 3) return;
+
+  S.money = numSub(S.money, cost);
+  S.lvRoot[idx]++;
+
+  if (idx === 1) log(`时间抹除域 Lv.${S.lvRoot[1]}：双方伤害 ×${Math.pow(1.2, S.lvRoot[1]).toFixed(3)}。`);
+  if (idx === 2) {
+    log(`迅速休息 Lv.${S.lvRoot[2]}。`);
+    if (S.lvRoot[2] >= 18 && !S.ach[22]) completeAchievement(22);
+  }
+  if (idx === 3) log(`邪念无伤·攻 Lv.${S.lvRoot[3]}。`);
+  if (idx === 4) log(`邪念无伤·防 Lv.${S.lvRoot[4]}。`);
+  if (idx === 3 || idx === 4) {
+    checkStoryTrigger('2-2');
+  }
+  if (idx === 5) {
+    log(`萌生之织线 Lv.${S.lvRoot[5]}。`);
+    if (S.lvRoot[5] >= 3 && !S.ach[24]) completeAchievement(24);
+    // ★ 买完残根5 后，立刻重算织线等级
+    if (S.weavingUnlocked) {
+      let budget = S.maxMoneyHeld;
+      let w1 = weavingCalc(cost1, budget);
+      if (S.ach[24]) w1 = Math.floor(w1 * 1.2);
+      let w2 = weavingCalc(cost2, budget);
+      if (S.ach[24]) w2 = Math.floor(w2 * 1.2);
+      let w3 = weavingCalc(cost3, budget);
+      S.weaving1 = w1;
+      S.weaving2 = w2;
+      S.weaving3 = w3;
+    }
+  }
+
+  recalc();
+  renderUpgradeTab();
+  renderBattle();
+  if (S.weavingUnlocked) renderWeavingTab(); // 重新渲染织线
+}
+
+// 绑定萌生升级（单栏版）
+$('up1').onclick = () => buy(1);
+$('up2').onclick = () => buy(2);
+$('up3').onclick = () => buy(3);
+$('up4').onclick = () => buy(4);
+$('up5').onclick = () => buy(5);
+$('up6').onclick = () => buy(6);
+$('up7').onclick = () => buyDisability();
+// 两栏版
+$('up1b').onclick = () => buy(1);
+$('up2b').onclick = () => buy(2);
+$('up3b').onclick = () => buy(3);
+$('up4b').onclick = () => buy(4);
+$('up5b').onclick = () => buy(5);
+$('up6b').onclick = () => buy(6);
+$('up7b').onclick = () => buyDisability();
+// 残根
+$('ur1').onclick = () => buyRoot(1);
+$('ur2').onclick = () => buyRoot(2);
+$('ur3').onclick = () => buyRoot(3);
+$('ur4').onclick = () => buyRoot(4);
+$('ur5').onclick = () => buyRoot(5);
+
+// ============================================================
+// 第十五部分：怪物等级选择
+// ============================================================
+function clampLvInput() {
+  let v = parseInt($('lvInput').value, 10);
+  if (isNaN(v) || v < 1) v = 1;
+  const lvCap = Math.max(1, S.maxBeaten + 1);
+  if (v > lvCap) v = lvCap;
+  $('lvInput').value = v;
+  return v;
+}
+
+$('lvMinus').onclick = () => {
+  let v = clampLvInput() - 1;
+  if (v < 1) v = 1;
+  $('lvInput').value = v;
+};
+
+$('lvPlus').onclick = () => {
+  let v = clampLvInput() + 1;
+  const lvCap = Math.max(1, S.maxBeaten + 1);
+  if (v > lvCap) v = lvCap;
+  $('lvInput').value = v;
+};
+
+$('lvApply').onclick = () => {
+  if (S.dead) { alert('死亡复活中，无法切换怪物等级。'); return; }
+  const v = clampLvInput();
+  if (v === S.monsterLv) return;
+  S.monsterLv = v;
+  S.atkTimer = 0;
+  spawnMonster();
+  log(`切换到 Lv.${v} 怪物。`, 'hl');
+  renderBattle();
+};
+
+$('lvInput').onchange = () => { clampLvInput(); };
+
+// ============================================================
+// 第十六部分：存档
+// ============================================================
+function serialize() {
+  return {
+    v: 6,
+    rawAtk: S.rawAtk,
+    rawDef: S.rawDef,
+    baseHp: S.baseHp,
+    atk: S.atk,
+    def: S.def,
+    maxHp: S.maxHp,
+    hp: S.hp,
+    interval: S.interval,
+    firepower: S.firepower,
+    range: S.range,
+    atkTimer: S.atkTimer,
+    monsterLv: S.monsterLv,
+    maxBeaten: S.maxBeaten,
+    dropMul: S.dropMul,
+    money: { m: S.money.m, e: S.money.e },
+    lv: { ...S.lv },
+    lvRoot: { ...S.lvRoot },
+    done: S.done,
+    stage: S.stage,
+    t: S.t,
+    dead: S.dead,
+    reviveTimer: S.reviveTimer,
+    mode: S.mode,
+    ach: { ...S.ach },
+    moneyMultiplier: S.moneyMultiplier,
+    xienianUnlocked: S.xienianUnlocked,
+    atkToHpRate: S.atkToHpRate,
+    defToHpRate: S.defToHpRate,
+    disabilityUnlocked: S.disabilityUnlocked,
+    disabilityLv: S.disabilityLv,
+    disabilityExp: S.disabilityExp,
+    disabilityValue: S.disabilityValue,
+    monster: S.monster ? {
+      lv: S.monster.lv,
+      atk: { m: S.monster.atk.m, e: S.monster.atk.e },
+      def: { m: S.monster.def.m, e: S.monster.def.e },
+      maxHp: { m: S.monster.maxHp.m, e: S.monster.maxHp.e },
+      hp: { m: S.monster.hp.m, e: S.monster.hp.e },
+      drop: { m: S.monster.drop.m, e: S.monster.drop.e },
+      speed: S.monster.speed,
+      interval: S.monster.interval,
+      firepower: S.monster.firepower,
+      atkTimer: S.monster.atkTimer
+    } : null,
+    storyUnlocked: { ...S.storyUnlocked },
+    maxMoneyHeld: { m: S.maxMoneyHeld.m, e: S.maxMoneyHeld.e },
+    weavingUnlocked: S.weavingUnlocked,
+    weavingLv: S.weavingLv,
+    weaving1: S.weaving1,
+    weaving2: S.weaving2,
+    weaving3: S.weaving3,
+  };
+}
+
+function deserialize(data) {
+  if (!data) throw new Error('存档为空');
+  S.rawAtk = data.rawAtk !== undefined ? data.rawAtk : 15;
+  S.rawDef = data.rawDef !== undefined ? data.rawDef : 2;
+  S.baseHp = data.baseHp !== undefined ? data.baseHp : 100;
+  S.atk = data.atk || S.rawAtk;
+  S.def = data.def || S.rawDef;
+  S.maxHp = data.maxHp || 100;
+  S.hp = data.hp || 100;
+  S.interval = data.interval || 1.0;
+  S.firepower = data.firepower || 1.0;
+  S.range = data.range || 2.0;
+  S.atkTimer = data.atkTimer || 0;
+  S.monsterLv = data.monsterLv || 1;
+  S.maxBeaten = data.maxBeaten || 0;
+  S.dropMul = data.dropMul || 1.2;
+  S.money = data.money ? { m: data.money.m, e: data.money.e } : makeNum(0,0);
+  S.lv = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, ...(data.lv || {}) };
+  S.lvRoot = { 1:0, 2:0, 3:0, 4:0, 5:0, ...(data.lvRoot || {}) };
+  S.done = data.done || false;
+  S.stage = data.stage || 1;
+  S.t = data.t || 0;
+  S.dead = data.dead || false;
+  S.reviveTimer = data.reviveTimer || 0;
+  S.mode = data.mode || 'rest';
+  S.ach = { 11:false, 12:false, 13:false, 14:false, 21:false, 22:false, ...(data.ach || {}) };
+  S.moneyMultiplier = data.moneyMultiplier !== undefined ? data.moneyMultiplier : 1.0;
+  S.xienianUnlocked = data.xienianUnlocked || false;
+  S.atkToHpRate = data.atkToHpRate !== undefined ? data.atkToHpRate : 12;
+  S.defToHpRate = data.defToHpRate !== undefined ? data.defToHpRate : 15;
+  S.disabilityUnlocked = data.disabilityUnlocked || false;
+  S.disabilityLv = data.disabilityLv || 0;
+  S.disabilityExp = data.disabilityExp || 0;
+  S.disabilityValue = data.disabilityValue || 0;
+  S.maxMoneyHeld = data.maxMoneyHeld ? { m: data.maxMoneyHeld.m, e: data.maxMoneyHeld.e } : makeNum(0, 0);
+  S.weavingUnlocked = data.weavingUnlocked || false;
+  S.weavingLv = data.weavingLv || 0;
+  S.weaving1 = data.weaving1 || 0;
+  S.weaving2 = data.weaving2 || 0;
+  S.weaving3 = data.weaving3 || 0;
+  if (S.weavingUnlocked) {
+    $('tabbtn-weaving').classList.remove('hidden');
+  }
+  if (S.ach[23]) {
+    $('ur5').style.display = 'block';
+  }
+  if (!data || (data.v !== 1 && data.v !== 2 && data.v !== 3 && data.v !== 4 && data.v !== 5 && data.v !== 6)) {
+    throw new Error('存档版本不匹配');
+  }
+  // ★ 剧情解锁：优先用存档里的，没有就空对象（不自动从 localStorage 继承）
+  S.storyUnlocked = data.storyUnlocked || {};
+  // ★ 导入时判定：条件已满足但剧情未解锁，自动解锁（不弹窗）
+  autoUnlockStories();
+
+  if (data.monster) {
+    S.monster = {
+      lv: data.monster.lv,
+      atk: { m: data.monster.atk.m, e: data.monster.atk.e },
+      def: { m: data.monster.def.m, e: data.monster.def.e },
+      maxHp: { m: data.monster.maxHp.m, e: data.monster.maxHp.e },
+      hp: { m: data.monster.hp.m, e: data.monster.hp.e },
+      drop: { m: data.monster.drop.m, e: data.monster.drop.e },
+      speed: data.monster.speed,
+      interval: data.monster.interval,
+      firepower: data.monster.firepower,
+      atkTimer: data.monster.atkTimer
+    };
+  } else {
+    spawnMonster();
+  }
+
+  // 模式高亮
+  if (S.mode === 'rest') {
+    $('modeRest').classList.add('active');
+    $('modeFight').classList.remove('active');
+  } else {
+    $('modeFight').classList.add('active');
+    $('modeRest').classList.remove('active');
+  }
+
+  // 遮罩
+  if (S.dead) {
+    $('reviveMask').style.display = 'flex';
+    $('reviveCd').textContent = Math.ceil(S.reviveTimer);
+  } else {
+    $('reviveMask').style.display = 'none';
+  }
+  if (S.done) $('end').style.display = 'flex';
+  else $('end').style.display = 'none';
+
+  // 伤残秘境 TAB 按钮
+  if (S.disabilityUnlocked) {
+    $('tabbtn-disability').classList.remove('hidden');
+    $('row-disability-lv').style.display = 'flex';
+    $('row-disability-value').style.display = 'flex';
+    $('row-disability-degree').style.display = 'flex';
+    $('upgrade-single').style.display = 'none';
+    $('upgrade-double').style.display = 'flex';
+    $('ur1').style.display = 'block';
+    $('ur2').style.display = 'block';
+  }
+  if (S.disabilityUnlocked) {
+    $('disabilityValuePanel').style.display = 'block';
+  }
+  if (S.ach[14]) {
+    $('ach-14').style.display = 'block';
+    $('ach-21').style.display = 'block';
+    $('ach-22').style.display = 'block';
+  }
+  if (S.ach[22]) {
+    $('ur3').style.display = 'block';
+    $('ur4').style.display = 'block';
+  }
+  if (S.xienianUnlocked) $('skill-xienian').style.display = 'block';
+  if (S.lv[7] > 0 || S.disabilityUnlocked) {
+    if ($('up7')) $('up7').style.display = 'block';
+    if ($('up7b')) $('up7b').style.display = 'block';
+  }
+
+  recalc();
+  renderAchievementTab();
+  renderUpgradeTab();
+  renderBattle();
+  renderOptionsTab();
+  if (S.disabilityUnlocked) renderDisabilityTab();
+}
+
+function getSaveCount() {
+  let n = parseInt(localStorage.getItem('ellinuss_save_count') || '0', 10);
+  return isNaN(n) ? 0 : n;
+}
+function bumpSaveCount() {
+  let n = getSaveCount() + 1;
+  localStorage.setItem('ellinuss_save_count', String(n));
+  return n;
+}
+function pad2(n) { return String(n).padStart(2, '0'); }
+function timestamp() {
+  const d = new Date();
+  return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`;
+}
+
+$('btn-export').onclick = () => {
+  const json = JSON.stringify(serialize());
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+  const content = 'DELTXT5\n' + b64;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const count = bumpSaveCount();
+  a.download = `Ellinuss's_Road_to_Celestial_Save_${timestamp()}_${count}.deltxt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  log(`存档已导出（第 ${count} 次）。`, 'hl');
+  renderOptionsTab();
+};
+
+$('btn-import').onclick = () => { $('file-input').click(); };
+
+$('file-input').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = reader.result.trim();
+      const lines = text.split('\n');
+      if (!lines[0].startsWith('DELTXT')) throw new Error('不是有效的 .deltxt 存档');
+      const json = decodeURIComponent(escape(atob(lines[1])));
+      const data = JSON.parse(json);
+      deserialize(data);
+      log('存档已导入。', 'hl');
+    } catch (err) {
+      alert('导入失败：' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
+
+// ============================================================
+// 第十七部分：织线
+// ============================================================
+function renderWeavingTab() {
+  if (!S.weavingUnlocked) return;
+  $('weaving-maxMoney').textContent = fmt(S.maxMoneyHeld);
+  let wlv = S.lvRoot[5] || 0;
+  // 织线1
+  if (wlv >= 1) {
+    $('weaving-1').textContent = S.weaving1;
+    $('weaving-box-1').style.display = 'block';
+  } else {
+    $('weaving-box-1').style.display = 'none';
+  }
+  // 织线2
+  if (wlv >= 2) {
+    $('weaving-2').textContent = S.weaving2;
+    $('weaving-box-2').style.display = 'block';
+  } else {
+    $('weaving-box-2').style.display = 'none';
+  }
+  // 织线3
+  if (wlv >= 3) {
+    $('weaving-3').textContent = S.weaving3;
+    $('weaving-box-3').style.display = 'block';
+  } else {
+    $('weaving-box-3').style.display = 'none';
+  }
+}
+// 计算在给定预算下，最多能买到第几级
+// 规则：maxMoney ≥ cost(n) 就能买到第 n 级
+function weavingCalc(costFn, budget) {
+  let lv = 0;
+  while (true) {
+    let c = costFn(lv);          // 买第 lv 级的价格
+    if (numCmp(c, budget) > 0) break;   // 买不起第 lv 级，停
+    lv++;
+    if (lv > 10000) break;       // 安全上限
+  }
+  return lv;
+}
+
+// ============================================================
+// 第十八部分：启动 & 主循环
+// ============================================================
+let gameStarted = false;
+
+function startGame() {
+  if (gameStarted) return;
+  gameStarted = true;
+  // ★ 保留已解锁剧情
+  const preservedStory = S.storyUnlocked || loadStoryUnlocked() || {};
+  $('startScreen').style.display = 'none';
+  $('mainGame').style.display = 'block';
+  S.storyUnlocked = preservedStory;   // 恢复
+
+  spawnMonster();
+  log('厄凛娜斯睁开眼。白板。只有棘刺。');
+  log('目标：10^7 凄残币，然后进入伤残秘境。');
+  log('提示：新存档默认休息模式。Tab 键可切换栏目。');
+
+  recalc();
+  renderBattle();
+  renderUpgradeTab();
+  renderAchievementTab();
+  renderOptionsTab();
+  renderGoal();
+
+  // 加载本地剧情解锁状态
+  // ★ 新存档不继承 localStorage 的剧情解锁状态（老玩家开新档仍会触发剧情）
+  // localStorage 只用于「剧情回顾」的跨存档保留，不用于自动触发判定
+  renderStoryReview();
+}
+
+$('btn-start').onclick = startGame;
+
+// 首次达到 1e7 时，自动切到升级 TAB 并提示
+let hasShown1e7Tip = false;
+function checkFirst1e7() {
+  if (hasShown1e7Tip) return;
+  if (numCmp(S.money, numFrom(1e7)) >= 0) {
+    hasShown1e7Tip = true;
+    log('★ 你已攒够 1×10^7 凄残币。请查看「升级」栏目。', 'hl');
+    // 显示萌生7
+    if (!S.disabilityUnlocked) {
+      if ($('up7')) $('up7').style.display = 'block';
+      if ($('up7b')) $('up7b').style.display = 'block';
+    }
+  }
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  if (gameStarted) {
+    tick(dt);
+    checkFirst1e7();
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
