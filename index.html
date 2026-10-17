@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 3.9</title>
+<title>厄凛娜斯的成神之路 · 3.10</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -124,6 +124,25 @@
     color: #ff6ad5;
     border-bottom-color: #ff6ad5;
   }
+
+  /* 伤残秘境 TAB：绿色系 */
+  #tabbar button[data-tab="disability"]:not(.active) {
+    color: #0d4d0d;
+  }
+  #tabbar button[data-tab="disability"].active {
+    color: #199B19;
+    border-bottom-color: #199B19;
+  }
+
+  /* 织线 TAB：灰白色系 */
+  #tabbar button[data-tab="weaving"]:not(.active) {
+    color: #666;
+  }
+  #tabbar button[data-tab="weaving"].active {
+    color: #ccc;
+    border-bottom-color: #ccc;
+  }
+
   #tabbar button.hidden { display: none; }
 
 
@@ -233,6 +252,13 @@
   }
   button.green-upgrade .cost { color: #6ad58a; }
   button.green-upgrade .desc { color: #8ac89a; }
+
+  /* 织线替代后的按钮：禁用但底色是浅灰 */
+  button.woven:disabled {
+    background: #c4c4c4;
+    border-color: #a0a0a0;
+    color: #333;
+  }
 
   #modebar { display: flex; gap: 8px; }
   #modebar button {
@@ -884,7 +910,7 @@
           <button id="ur1" style="display:none;">时间抹除域 <span class="lvl" id="lr1">Lv.0</span><span class="cost" id="cr1">0</span>
             <span class="desc">独立加成。双方伤害 ×1.2^等级。价格：10^(5+2.5n)</span></button>
           <button id="ur2" style="display:none;">迅速休息 <span class="lvl" id="lr2">Lv.0</span><span class="cost" id="cr2">0</span>
-            <span class="desc">非独立加成。休息时每秒额外恢复 25% 生命值，上限 18 级。价格：10000000 × 1.15^n</span></button>
+            <span class="desc">非独立加成。休息时每秒额外恢复 25% 生命值，上限 18 级。价格：10^(6.5+0.09n)</span></button>
           <button id="ur3" style="display:none;">邪念无伤 · 攻 <span class="lvl" id="lr3">Lv.0</span><span class="cost" id="cr3">0</span>
             <span class="desc">超出硬上限的攻击→生命转化率+1，上限11级。价格：500000 × 1.5^n</span></button>
           <button id="ur4" style="display:none;">邪念无伤 · 防 <span class="lvl" id="lr4">Lv.0</span><span class="cost" id="cr4">0</span>
@@ -898,26 +924,26 @@
 
   <!-- ===== TAB 3：织线（解锁后显示） ===== -->
   <div id="tab-weaving" class="tab-panel">
-    <div class="panel" style="background:#f5f5f5;border:2px solid #fff;">
-      <div style="text-align:center;font-size:14px;color:#222;margin-bottom:12px;letter-spacing:2px;padding:8px;background:#e8e8e8;border-radius:6px;">
+    <div class="panel" style="background:#c4c4c4;border:2px solid #ccc;">
+      <div style="text-align:center;font-size:14px;color:#1a1a1a;margin-bottom:12px;letter-spacing:2px;padding:8px;background:#bababa;border-radius:6px;">
         你曾最多持有 <b id="weaving-maxMoney">0</b> 凄残币
       </div>
       <div style="font-size:14px;color:#222;margin-bottom:10px;font-weight:bold;">织线 · 萌生</div>
       <div style="display:flex;gap:12px;">
-        <div id="weaving-box-1" style="display:none;flex:1;background:#fff;border:1px solid #ccc;border-radius:6px;padding:12px;color:#222;">
+        <div id="weaving-box-1" style="display:none;flex:1;background:#ccc;border:1px solid #a0a0a0;border-radius:6px;padding:12px;color:#1a1a1a;">
           <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 萌生1</div>
-          <div style="font-size:11px;color:#666;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生1的购买次数。</div>
-          <div style="font-size:16px;color:#000;">当前：<b id="weaving-1">0</b></div>
+          <div style="font-size:11px;color:#525252;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生1的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-1">0</b> <span id="weaving-formula-1" style="font-size:11px;color:#525252;"></span></div>
         </div>
-        <div id="weaving-box-2" style="display:none;flex:1;background:#fff;border:1px solid #ccc;border-radius:6px;padding:12px;color:#222;">
+        <div id="weaving-box-2" style="display:none;flex:1;background:#ccc;border:1px solid #a0a0a0;border-radius:6px;padding:12px;color:#1a1a1a;">
           <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 萌生2</div>
-          <div style="font-size:11px;color:#666;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生2的购买次数。</div>
-          <div style="font-size:16px;color:#000;">当前：<b id="weaving-2">0</b></div>
+          <div style="font-size:11px;color:#525252;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生2的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-2">0</b> <span id="weaving-formula-2" style="font-size:11px;color:#525252;"></span></div>
         </div>
-        <div id="weaving-box-3" style="display:none;flex:1;background:#fff;border:1px solid #ccc;border-radius:6px;padding:12px;color:#222;">
+        <div id="weaving-box-3" style="display:none;flex:1;background:#ccc;border:1px solid #a0a0a0;border-radius:6px;padding:12px;color:#1a1a1a;">
           <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 萌生3</div>
-          <div style="font-size:11px;color:#666;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生3的购买次数。</div>
-          <div style="font-size:16px;color:#000;">当前：<b id="weaving-3">0</b></div>
+          <div style="font-size:11px;color:#525252;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生3的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-3">0</b> <span id="weaving-formula-3" style="font-size:11px;color:#525252;"></span></div>
         </div>
       </div>
     </div>
@@ -1209,7 +1235,7 @@ function cost5(n) { return numMul(makeNum(1, 5), numFrom(Math.pow(1.25, n))); }
 function cost6(n) { return numMul(makeNum(1, 5), numFrom(Math.pow(1.25, n))); }
 // 残根
 function costR1(n) { return numFrom(Math.pow(10, 5 + 2.5 * n)); }
-function costR2(n) { return numMul(makeNum(1, 7), numFrom(Math.pow(1.15, n))); }
+function costR2(n) { return numFrom(Math.pow(10, 6.5 + 0.09 * n)); }
 function costR3(n) { return numMul(makeNum(5, 5), numFrom(Math.pow(1.5, n))); }
 function costR4(n) { return numMul(makeNum(5, 5), numFrom(Math.pow(1.5, n))); }
 function costR5(n) { return numFrom(Math.pow(10, 6.5 + 0.75 * n)); }
@@ -1539,7 +1565,7 @@ function getAchievementName(id) {
     13: '诶我的攻击力和防御力呢？',
     14: '伤残秘境欢迎你',
     21: '再见，伤残秘境的新手村？',
-    22: '恢复速度比土豆^(1/42)还快',
+    22: '恢复速度比土豆^0还快……等等才多少？',
     23: '距离伤残值更新还剩e0.5小时',
     24: '等等，伤残秘境哪里来的织者？'
   };
@@ -2199,8 +2225,13 @@ function renderUpgradeTab() {
     if ($('l' + i)) $('l' + i).textContent = replaced ? ('织线 Lv.' + S['weaving' + i]) : ('Lv.' + S.lv[i]);
     // 织线生效的按钮禁用
     if (replaced) {
-      if ($('up' + i)) $('up' + i).disabled = true;
+      if ($('up' + i)) {
+        $('up' + i).disabled = true;
+        $('up' + i).classList.add('woven');
+      }
       continue;
+    } else {
+      if ($('up' + i)) $('up' + i).classList.remove('woven');
     }
     let canBuy = numCmp(S.money, costs[i]) >= 0;
     if (i === 4 && S.lv[4] >= 5) canBuy = false;
@@ -2222,8 +2253,13 @@ function renderUpgradeTab() {
     if ($('c' + i + 'b')) $('c' + i + 'b').textContent = fmt(shownCost);
     if ($('l' + i + 'b')) $('l' + i + 'b').textContent = replaced ? ('织线 Lv.' + S['weaving' + i]) : ('Lv.' + S.lv[i]);
     if (replaced) {
-      if ($('up' + i + 'b')) $('up' + i + 'b').disabled = true;
+      if ($('up' + i + 'b')) {
+        $('up' + i + 'b').disabled = true;
+        $('up' + i + 'b').classList.add('woven');
+      }
       continue;
+    } else {
+      if ($('up' + i + 'b')) $('up' + i + 'b').classList.remove('woven');
     }
     let canBuy = numCmp(S.money, costs[i]) >= 0;
     if (i === 4 && S.lv[4] >= 5) canBuy = false;
@@ -2291,7 +2327,7 @@ function renderAchievementTab() {
     { id: 13, name: '诶我的攻击力和防御力呢？', cond: '购买 1 次「攻击力+1」或 4 次「防御力+1」。', reward: '解锁技能【邪念无伤】。' },
     { id: 14, name: '伤残秘境欢迎你', cond: '购买升级 · 萌生「伤残秘境」。', reward: '解锁伤残等级和伤残程度。' },
     { id: 21, name: '再见，伤残秘境的新手村？', cond: '伤残等级到达 10 级。', reward: '怪物每升 1 级凄残币倍率 1.2→1.3。' },
-    { id: 22, name: '恢复速度比土豆^(1/42)还快', cond: '升满「迅速休息」。', reward: '解锁两个特别好的升级。' },
+    { id: 22, name: '恢复速度比土豆^0还快……等等才多少？', cond: '迅速休息（升级 · 残根2）达到 2 级。', reward: '解锁两个特别好的升级。' },
     { id: 23, name: '距离伤残值更新还剩e0.5小时', cond: '伤残等级到达 31 级。', reward: '解锁织线。' },
     { id: 24, name: '等等，伤残秘境哪里来的织者？', cond: '解锁全部织线 · 萌生（萌生之织线 Lv.3）。', reward: '前2个织线最终数量 ×1.2。' }
   ];
@@ -2420,7 +2456,7 @@ function buyRoot(idx) {
   if (idx === 1) log(`时间抹除域 Lv.${S.lvRoot[1]}：双方伤害 ×${Math.pow(1.2, S.lvRoot[1]).toFixed(3)}。`);
   if (idx === 2) {
     log(`迅速休息 Lv.${S.lvRoot[2]}。`);
-    if (S.lvRoot[2] >= 18 && !S.ach[22]) completeAchievement(22);
+    if (S.lvRoot[2] >= 2 && !S.ach[22]) completeAchievement(22);
   }
   if (idx === 3) log(`邪念无伤·攻 Lv.${S.lvRoot[3]}。`);
   if (idx === 4) log(`邪念无伤·防 Lv.${S.lvRoot[4]}。`);
@@ -2759,24 +2795,43 @@ function renderWeavingTab() {
   if (!S.weavingUnlocked) return;
   $('weaving-maxMoney').textContent = fmt(S.maxMoneyHeld);
   let wlv = S.lvRoot[5] || 0;
+
+  // 计算基础值（未乘任何加成）
+  let base1 = weavingCalc(cost1, S.maxMoneyHeld);
+  let base2 = weavingCalc(cost2, S.maxMoneyHeld);
+  let base3 = weavingCalc(cost3, S.maxMoneyHeld);
+
   // 织线1
   if (wlv >= 1) {
-    $('weaving-1').textContent = S.weaving1;
     $('weaving-box-1').style.display = 'block';
+    $('weaving-1').textContent = S.weaving1;
+    // 公式
+    let f1 = `[${base1}`;
+    if (S.ach[24]) f1 += `×[成就24]1.2`;
+    f1 += `]`;
+    $('weaving-formula-1').textContent = f1;
   } else {
     $('weaving-box-1').style.display = 'none';
   }
+
   // 织线2
   if (wlv >= 2) {
-    $('weaving-2').textContent = S.weaving2;
     $('weaving-box-2').style.display = 'block';
+    $('weaving-2').textContent = S.weaving2;
+    let f2 = `[${base2}`;
+    if (S.ach[24]) f2 += `×[成就24]1.2`;
+    f2 += `]`;
+    $('weaving-formula-2').textContent = f2;
   } else {
     $('weaving-box-2').style.display = 'none';
   }
+
   // 织线3
   if (wlv >= 3) {
-    $('weaving-3').textContent = S.weaving3;
     $('weaving-box-3').style.display = 'block';
+    $('weaving-3').textContent = S.weaving3;
+    let f3 = `[${base3}]`;
+    $('weaving-formula-3').textContent = f3;
   } else {
     $('weaving-box-3').style.display = 'none';
   }
