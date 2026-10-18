@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 3.10</title>
+<title>厄凛娜斯的成神之路 · 3.12</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -96,6 +96,14 @@
   #goal b { color: #ff6ad5; }
   #goal .done { color: #6ad58a; }
   #goal .next { color: #a87ad8; }
+  /* 教程按钮闪烁提示 */
+  @keyframes tutorialBlink {
+    0%, 100% { background: #2a1040; border-color: #6a3a9a; color: #d8c8e8; }
+    50% { background: #4a3a00; border-color: #ffcc00; color: #ffe566; }
+  }
+  #btn-tutorial.blink {
+    animation: tutorialBlink 2s ease-in-out infinite;
+  }
 
   /* ===== TAB 切换栏 ===== */
   #tabbar {
@@ -718,6 +726,33 @@
     background: #0a0610;
     border-color: #3a2050;
   }
+
+  /* 教程列表项 */
+  .tutorial-item {
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #b8a8c8;
+    background: #0a0610;
+    border: 1px solid #2a1540;
+    transition: all .15s;
+  }
+  .tutorial-item:hover {
+    background: #1a0a2a;
+    border-color: #a87ad8;
+  }
+  .tutorial-item.active {
+    background: #3a1858;
+    border-color: #ff6ad5;
+    color: #ffd8ff;
+  }
+  .tutorial-item.locked {
+    opacity: .4;
+    cursor: not-allowed;
+  }
+  
 </style>
 </head>
 <body>
@@ -736,7 +771,10 @@
      ============================================================ -->
 <div id="mainGame">
 
-  <h1>厄凛娜斯的成神之路</h1>
+  <div style="position:relative;margin-bottom:4px;">
+    <h1 style="margin-bottom:0;">厄凛娜斯的成神之路</h1>
+    <button id="btn-tutorial" style="position:absolute;right:0;top:50%;transform:translateY(-50%);width:auto;padding:6px 12px;font-size:12px;text-align:center;margin:0;">教程 / 关于……</button>
+  </div>
   <div class="sub">萌生 → 残根</div>
 
   <!-- 阶段横条 -->
@@ -1030,6 +1068,59 @@
       <button id="storyDone" class="story-btn">√</button>
     </div>
   </div>
+  <!-- 删除存档弹窗 -->
+  <div id="deleteOverlay" style="position:fixed;inset:0;background:rgba(5,2,10,.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:300;text-align:center;padding:20px;">
+    <div id="deleteTip" style="position:absolute;top:0;left:0;right:0;background:#199B19;color:#fff;font-size:13px;text-align:center;padding:10px;">
+      您正在<span style="color:#ff4444;">删除存档</span>，为了您的游戏体验以及厄凛娜斯的安全，自动为您切换成休息模式
+    </div>
+    <div style="background:#12081e;border:2px solid #8a2a2a;border-radius:12px;padding:24px;max-width:500px;">
+      <div style="font-size:16px;color:#ffd8d8;margin-bottom:16px;line-height:1.8;">
+        你正在<span style="color:#ff4444;font-weight:bold;">删除</span>你的存档，这将<span style="color:#ff4444;font-weight:bold;">抹除</span>您的存档全部数据，并且不会获得任何buff和隐藏成就。输入「愿伤残护佑你」以删除存档。
+      </div>
+      <input type="text" id="deleteInput" style="width:100%;background:#0a0610;border:1px solid #4a2a6a;color:#e8d8ff;border-radius:6px;padding:8px;font-size:14px;text-align:center;margin-bottom:12px;font-family:inherit;">
+      <div style="display:flex;gap:8px;">
+        <button id="deleteConfirm" style="flex:1;background:#4a0d0d;border-color:#8a2a2a;color:#ff4444;text-align:center;" disabled>确定</button>
+        <button id="deleteCancel" style="flex:1;background:#2a1040;border-color:#6a3a9a;color:#d8c8e8;text-align:center;">取消</button>
+      </div>
+    </div>
+  </div>
+  <!-- 禁忌知识确认弹窗 -->
+  <div id="forbiddenOverlay" style="position:fixed;inset:0;background:rgba(5,2,10,.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:300;text-align:center;padding:20px;">
+    <div style="background:#12081e;border:2px solid #8a2a8a;border-radius:12px;padding:24px;max-width:500px;">
+      <div style="font-size:16px;color:#ffd8ff;margin-bottom:20px;line-height:1.8;">
+        您将会查阅<span style="color:#ff4444;font-weight:bold;">禁忌知识</span>，是否确认？禁忌作用持续时间为15秒。
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="forbiddenConfirm" style="flex:1;background:#4a0d4a;border-color:#8a2a8a;color:#ffd8ff;text-align:center;">确认</button>
+        <button id="forbiddenCancel" style="flex:1;background:#2a1040;border-color:#6a3a9a;color:#d8c8e8;text-align:center;">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 教程弹窗 -->
+  <div id="tutorialOverlay" style="position:fixed;inset:0;background:rgba(5,2,10,.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:350;padding:40px 20px;">
+    <div id="tutorialTip" style="position:absolute;top:0;left:0;right:0;background:#199B19;color:#fff;font-size:13px;text-align:center;padding:10px;letter-spacing:1px;">
+      您在查看教程，已帮您暂停游戏
+    </div>
+    <div style="display:flex;gap:16px;width:90%;max-width:1000px;height:70vh;margin-top:20px;">
+      <!-- 左侧教程列表 -->
+      <div id="tutorialList" style="flex:1;background:#12081e;border:1px solid #3a2050;border-radius:8px;padding:12px;overflow-y:auto;">
+        <!-- 由 JS 生成 -->
+      </div>
+      <!-- 右侧教程内容 -->
+      <div style="flex:3;background:#12081e;border:1px solid #3a2050;border-radius:8px;padding:20px;overflow-y:auto;">
+        <div id="tutorialTitle" style="font-size:16px;color:#ff6ad5;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #3a2050;"></div>
+        <div id="tutorialContent" style="font-size:13px;color:#d8c8e8;line-height:1.8;white-space:pre-wrap;"></div>
+      </div>
+    </div>
+    <button id="tutorialClose" style="margin-top:16px;width:auto;padding:8px 32px;text-align:center;font-size:14px;">关闭</button>
+  </div>
+
+  <!-- 禁忌知识效果横条 -->
+  <div id="forbiddenBar" style="position:fixed;top:0;left:0;right:0;background:#8a2a2a;color:#fff;font-size:13px;text-align:center;padding:10px;display:none;z-index:400;">
+    <span id="forbiddenText"></span>
+    <span id="forbiddenCd" style="margin-left:12px;color:#ffaaaa;"></span>
+  </div>
 
   <!-- ============================================================
        剧情回顾 TAB 里的列表容器
@@ -1064,6 +1155,30 @@
           <input type="file" id="file-input" accept=".deltxt" style="display:none;">
           <div class="save-info">存档总游戏时长：<b id="playTime">0d 00:00:00.000</b></div>
           <div class="save-info">存档总导出次数：<b id="saveCount">0</b></div>
+          <div class="save-info" style="margin-top:8px;">
+            自动存档间隔：
+            <select id="autosave-interval" style="background:#0a0610;border:1px solid #4a2a6a;color:#e8d8ff;border-radius:4px;padding:2px 6px;font-family:Consolas,monospace;">
+              <option value="10">10s</option>
+              <option value="30" selected>30s</option>
+              <option value="60">60s</option>
+              <option value="120">120s</option>
+              <option value="180">180s</option>
+              <option value="300">300s</option>
+              <option value="600">600s</option>
+              <option value="0">∞</option>
+            </select>
+          </div>
+          <div class="save-info" id="lastAutoSaveInfo" style="display:none;">
+            距离上次自动存档：<b id="lastAutoSaveSec">—</b> 秒
+          </div>
+          <div class="opt-row" style="margin-top:6px;">
+            <button id="btn-manual-autosave" style="text-align:center;font-size:12px;">立即自动存档</button>
+          </div>
+        </div>
+        <div class="panel" style="border-color:#8a2a2a;">
+          <h2 style="color:#d56a6a;">⚠ DANGER ZONE ⚠ 危险区 ⚠ DANGER ZONE ⚠</h2>
+          <button id="btn-delete-save" style="background:#4a0d0d;border-color:#8a2a2a;color:#ffd8d8;">删除存档，重置游戏</button>
+          <button id="btn-forbidden" style="background:#2a0d2a;border-color:#8a2a8a;color:#ffd8ff;margin-top:6px;">禁忌知识</button>
         </div>
       </div>
     </div>
@@ -1164,6 +1279,10 @@ function fmtNum(x) {
 // ============================================================
 // 第二部分：游戏状态
 // ============================================================
+// ★ 禁忌知识全局变量
+let forbiddenDamageOverride = false;
+let forbiddenBackup = null;
+// 初始数据
 const S = {
   // 基础属性（原始值）
   rawAtk: 15,
@@ -1222,6 +1341,9 @@ const S = {
   weaving1: 0,                   // 织线·萌生1 当前等级
   weaving2: 0,                   // 织线·萌生2 当前等级
   weaving3: 0,                   // 织线·萌生3 当前等级
+  autoSaveInterval: 30,    // 自动存档间隔（秒），默认 30s
+  autoSaveTimer: 0,        // 自动存档计时器
+  lastAutoSave: 0,         // 上次自动存档的时间（用于显示）
 };
 
 // ============================================================
@@ -1246,6 +1368,34 @@ function costR5(n) { return numFrom(Math.pow(10, 6.5 + 0.75 * n)); }
 
 // 重算所有派生值
 function recalc() {
+  // ★ 禁忌知识1：基础属性临时覆盖
+  if (forbiddenActive === 1) {
+    S.rawAtk = 15;
+    S.rawDef = 5;
+    let baseMaxHp = 600;
+    // 跳过正常计算，直接设派生值
+    S.atk = 15;
+    S.def = 5;
+    S.curAtk = 15;
+    S.curDef = 5;
+    S.recoverableHp = 600;
+    S.curMaxHp = 600;
+    S.maxHp = 600;
+    if (S.hp > 600) S.hp = 600;
+    S.curDisabilityValueMax = S.disabilityUnlocked ? S.disabilityLv : 0;
+    if (S.disabilityValue > S.curDisabilityValueMax) S.disabilityValue = S.curDisabilityValueMax;
+    // 伤残程度
+    if (S.disabilityUnlocked && S.hp > 0) {
+      let lgMax = Math.log10(600);
+      let lgCur = Math.log10(Math.max(S.hp, 0.001));
+      S.disabilityDegree = Math.max(0, 10 * (lgMax - lgCur));
+    } else {
+      S.disabilityDegree = 0;
+    }
+    S.damageBonus = S.disabilityDegree * 0.10;
+    return;   // 跳过正常计算
+  }
+  // 下面是正常计算
   // ★ 织线替代：按残根5 等级，决定用织线等级还是手动等级
   let wlv = S.lvRoot[5] || 0;
 
@@ -1383,6 +1533,10 @@ function makeMonster(lv) {
 
 // 伤害公式
 function calcDamage(atkNum, defNum, firepower) {
+  // ★ 禁忌知识3：基础伤害 = 2
+  if (forbiddenDamageOverride) {
+    return numFrom(2);
+  }
   let diff;
   if (defNum.m === 0) {
     diff = atkNum;
@@ -2358,6 +2512,29 @@ function renderOptionsTab() {
   $('o-goal').textContent = S.stage === 1 ? '10^7 凄残币' : '100 级伤残等级';
   $('playTime').textContent = formatDuration(S.t);
   $('saveCount').textContent = getSaveCount();
+  $('autosave-interval').onchange = () => {
+    S.autoSaveInterval = parseInt($('autosave-interval').value, 10);
+    S.autoSaveTimer = 0;
+    log(`自动存档间隔设为 ${S.autoSaveInterval === 0 ? '∞' : S.autoSaveInterval + 's'}。`);
+  };
+  if ($('autosave-interval')) {
+    $('autosave-interval').value = String(S.autoSaveInterval);
+  }
+  // ★ 距离上次自动存档
+  if (S.autoSaveInterval > 0) {
+    $('lastAutoSaveInfo').style.display = 'block';
+    let sinceLast = S.t - S.lastAutoSave;
+    if (sinceLast < 0) sinceLast = 0;
+    $('lastAutoSaveSec').textContent = sinceLast.toFixed(1);
+  } else {
+    $('lastAutoSaveInfo').style.display = 'none';
+  }
+  $('btn-manual-autosave').onclick = () => {
+    saveAuto();
+    S.lastAutoSave = S.t;
+    log('手动自动存档已触发。', 'hl');
+    renderOptionsTab();
+  };
 }
 
 // 伤残秘境 TAB
@@ -2604,6 +2781,7 @@ function serialize() {
     weaving1: S.weaving1,
     weaving2: S.weaving2,
     weaving3: S.weaving3,
+    autoSaveInterval: S.autoSaveInterval,
   };
 }
 
@@ -2660,6 +2838,13 @@ function deserialize(data) {
   S.storyUnlocked = data.storyUnlocked || {};
   // ★ 导入时判定：条件已满足但剧情未解锁，自动解锁（不弹窗）
   autoUnlockStories();
+  // 自动存档时间
+  S.autoSaveInterval = data.autoSaveInterval !== undefined ? data.autoSaveInterval : 30;
+  S.autoSaveTimer = 0;
+  // 更新下拉框
+  if ($('autosave-interval')) {
+    $('autosave-interval').value = String(S.autoSaveInterval);
+  }
 
   if (data.monster) {
     S.monster = {
@@ -2678,22 +2863,17 @@ function deserialize(data) {
     spawnMonster();
   }
 
-  // 模式高亮
-  if (S.mode === 'rest') {
-    $('modeRest').classList.add('active');
-    $('modeFight').classList.remove('active');
-  } else {
-    $('modeFight').classList.add('active');
-    $('modeRest').classList.remove('active');
-  }
+  // ★ 导入存档后强制切休息
+  S.mode = 'rest';
+  $('modeRest').classList.add('active');
+  $('modeFight').classList.remove('active');
 
   // 遮罩
-  if (S.dead) {
-    $('reviveMask').style.display = 'flex';
-    $('reviveCd').textContent = Math.ceil(S.reviveTimer);
-  } else {
-    $('reviveMask').style.display = 'none';
-  }
+  // ★ 导入后清除死亡/通关遮罩（强制休息，不会死）
+  $('reviveMask').style.display = 'none';
+  S.dead = false;
+  S.reviveTimer = 0;
+  // 通关遮罩保留（如果已通关，还是显示）
   if (S.done) $('end').style.display = 'flex';
   else $('end').style.display = 'none';
 
@@ -2725,6 +2905,13 @@ function deserialize(data) {
     if ($('up7')) $('up7').style.display = 'block';
     if ($('up7b')) $('up7b').style.display = 'block';
   }
+
+  // ★ 导入存档后强制切休息
+  S.mode = 'rest';
+  $('modeRest').classList.add('active');
+  $('modeFight').classList.remove('active');
+  if ($('reviveMask')) $('reviveMask').style.display = 'none';
+  if ($('end')) $('end').style.display = 'none';
 
   recalc();
   renderAchievementTab();
@@ -2850,7 +3037,308 @@ function weavingCalc(costFn, budget) {
 }
 
 // ============================================================
-// 第十八部分：启动 & 主循环
+// 第十八部分：自动存档
+// ============================================================
+const AUTO_SAVE_KEY = 'ellinuss_autosave';
+
+function saveAuto() {
+  try {
+    const json = JSON.stringify(serialize());
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    localStorage.setItem(AUTO_SAVE_KEY, 'DELTXT6\n' + b64);
+    S.lastAutoSave = S.t;
+  } catch (e) {
+    // localStorage 满了或不可用，静默失败
+  }
+}
+
+function loadAuto() {
+  try {
+    const content = localStorage.getItem(AUTO_SAVE_KEY);
+    if (!content) return null;
+    const lines = content.split('\n');
+    if (!lines[0].startsWith('DELTXT')) return null;
+    const json = decodeURIComponent(escape(atob(lines[1])));
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearAuto() {
+  try {
+    localStorage.removeItem(AUTO_SAVE_KEY);
+  } catch (e) {}
+}
+
+// ============================================================
+// 第十九部分：危险区：删除存档
+// ============================================================
+let deleteWasMode = 'rest';
+
+$('btn-delete-save').onclick = () => {
+  // 保存当前模式，切休息
+  deleteWasMode = S.mode;
+  if (S.mode !== 'rest') setMode('rest');
+  // 显示弹窗
+  $('deleteOverlay').style.display = 'flex';
+  $('deleteInput').value = '';
+  $('deleteConfirm').disabled = true;
+};
+
+$('deleteInput').oninput = () => {
+  const v = $('deleteInput').value.trim();
+  $('deleteConfirm').disabled = (v !== '愿伤残护佑你');
+};
+
+$('deleteCancel').onclick = () => {
+  $('deleteOverlay').style.display = 'none';
+  if (deleteWasMode !== S.mode) setMode(deleteWasMode);
+};
+
+$('deleteConfirm').onclick = () => {
+  // 删除 localStorage 里的自动存档和存档次数
+  try {
+    localStorage.removeItem(AUTO_SAVE_KEY);
+    localStorage.removeItem('ellinuss_save_count');
+    localStorage.removeItem('ellinuss_story_unlocked');
+  } catch (e) {}
+  // 刷新页面，回到开始界面
+  location.reload();
+};
+
+// ============================================================
+// 第二十部分：危险区：禁忌知识
+// ============================================================
+let forbiddenWasMode = 'rest';
+let forbiddenTimer = 0;
+let forbiddenActive = null;   // 当前生效的禁忌
+
+$('btn-forbidden').onclick = () => {
+  forbiddenWasMode = S.mode;
+  if (S.mode !== 'rest') setMode('rest');
+  $('forbiddenOverlay').style.display = 'flex';
+};
+
+$('forbiddenCancel').onclick = () => {
+  $('forbiddenOverlay').style.display = 'none';
+  if (forbiddenWasMode !== S.mode) setMode(forbiddenWasMode);
+};
+
+$('forbiddenConfirm').onclick = () => {
+  $('forbiddenOverlay').style.display = 'none';
+  // 等概率随机 1-3
+  const pick = Math.floor(Math.random() * 3) + 1;
+  activateForbidden(pick);
+};
+
+function activateForbidden(n) {
+  forbiddenActive = n;
+  forbiddenTimer = 15;
+  $('forbiddenBar').style.display = 'block';
+  $('forbiddenText').textContent
+
+  if (n === 1) {
+    // 基础属性临时降低
+    $('forbiddenText').textContent = '在《伤残秘境档案》中，厄凛娜斯的基础生命值只有600，基础攻击力只有15，基础防御力只有5，不信你就看看。';
+    // 备份
+    forbiddenBackup = {
+      rawAtk: S.rawAtk, rawDef: S.rawDef, baseHp: S.baseHp,
+      lv1: S.lv[1], lv2: S.lv[2], lv3: S.lv[3]
+    };
+    // 临时覆盖
+    S.rawAtk = 15;
+    S.rawDef = 5;
+    S.baseHp = 600;
+    S.lv[1] = 0;
+    S.lv[2] = Math.min(S.lv[2], 3);
+    S.lv[3] = Math.min(S.lv[3], 50);
+  }
+  if (n === 2) {
+    // 鼠标失灵 + 网页暗淡
+    $('forbiddenText').textContent = '厄凛娜斯需要附身的"容器"，你就不错。';
+    document.body.style.pointerEvents = 'none';
+    document.body.style.filter = 'brightness(0.3)';
+    // 强制休息
+    if (S.mode !== 'rest') setMode('rest');
+  }
+  if (n === 3) {
+    // 基础伤害 = 2
+    $('forbiddenText').textContent = '战斗机制被抹除者篡改过。';
+    forbiddenDamageOverride = true;
+  }
+}
+
+function deactivateForbidden() {
+  if (forbiddenActive === 1 && forbiddenBackup) {
+    S.rawAtk = forbiddenBackup.rawAtk;
+    S.rawDef = forbiddenBackup.rawDef;
+    S.baseHp = forbiddenBackup.baseHp;
+    S.lv[1] = forbiddenBackup.lv1;
+    S.lv[2] = forbiddenBackup.lv2;
+    S.lv[3] = forbiddenBackup.lv3;
+    forbiddenBackup = null;
+  }
+  if (forbiddenActive === 2) {
+    document.body.style.pointerEvents = '';
+    document.body.style.filter = '';
+  }
+  if (forbiddenActive === 3) {
+    forbiddenDamageOverride = false;
+  }
+  forbiddenActive = null;
+  forbiddenTimer = 0;
+  $('forbiddenBar').style.display = 'none';
+}
+
+// ============================================================
+// 第二十一部分：教程系统
+// ============================================================
+const TUTORIAL_DATA = [
+  {
+    id: 0,
+    title: '关于游戏',
+    content: `《厄凛娜斯的成神之路》是伤残凄融莽葬无生悔 · 源之初（后续用"源之初"代指）在设计《伤残凄融莽葬无生悔》的时候沉溺于角色厄凛娜斯无法自拔而想做出一款游戏记住那一瞬间。
+
+厄凛娜斯的角色属性设计高度复刻《伤残凄融莽葬无生悔》的《伤残秘境档案》厄凛娜斯卷，包括但不限于角色基础属性、技能、人设。呃，这句话在《厄凛娜斯的成神之路》背景下好像是禁忌知识，懒得打码了，毕竟我源之初是策划。
+
+本游戏由源之初策划，由Deepseek完成代码，源之初进行代码微调。
+
+每个版本的游戏终局条件不同，可以在游戏界面上方查看。
+
+作者B站：
+@伤残凄融莽葬无生悔  https://space.bilibili.com/470473065
+@抹除者_谜烟（小号）  https://space.bilibili.com/3546721401441090
+
+复制网址与Deepseek开聊：https://chat.deepseek.com`,
+    unlock: () => true   // 始终解锁
+  },
+  {
+    id: 1,
+    title: '战斗',
+    content: `这是游戏主界面。厄凛娜斯通过和（伤残秘境视角的）怪物战斗，获得凄残币。凄残币可以购买升级（详情见2. 升级）。
+
+左侧展示的是厄凛娜斯的基础属性和技能。右侧展示厄凛娜斯和怪物战斗的状态。
+
+点击"战斗"让厄凛娜斯和怪物开战，击杀怪物将获得凄残币。点击"休息"可以恢复厄凛娜斯的生命值，但是厄凛娜斯休息的时候怪物也在休整，会以相同的速度恢复生命值。默认恢复速度是20%可恢复的生命值/s，厄凛娜斯的恢复速度和怪物保持一致。
+
+在怪物界面可以选择怪物的等级，等级越高，怪物的基础属性越高，相对的，怪物的掉落也越高。默认每升1级，怪物的攻击力和生命值×1.1，同时怪物的掉落×1.2。
+
+在战斗时如果厄凛娜斯的生命值归零，则厄凛娜斯死亡，复活时间默认10秒。厄凛娜斯死亡并不会导致你存档直接重置，而是以满生命状态重新和怪物开始战斗。`,
+    unlock: () => true
+  },
+  {
+    id: 2,
+    title: '升级',
+    content: `收获的凄残币可以用于升级基础属性和技能属性。
+
+新手推荐先购买攻击间隔降低。`,
+    unlock: () => true
+  },
+  {
+    id: 3,
+    title: '成就和剧情',
+    content: `达成一定条件后可以获得成就，每个成就都会给予奖励。可以在成就界面查看所有成就及其完成条件。
+
+游戏进行到一定阶段后，将会展示剧情。看过的剧情如果还想再看一遍可以在剧情回顾查看。`,
+    unlock: () => true
+  },
+  {
+    id: 4,
+    title: '存档',
+    content: `在选项界面，你可以点击"导出存档"将存档以.deltxt文件导出。
+
+如果你已经有存档想继续玩，可以点击"导入存档"将存档导入继续游玩。
+
+游戏现在加入了自动存档，这会让游戏在刷新后用自动保存的数据继续进行。默认30秒进行一次，你可以更改该间隔。
+
+如果你想立刻自动存档，可以点击"立即自动存档"更新自动存档的数据。
+
+危险区的操作比较危险，可能造成数据丢失，慎用。危险区所有操作都有确认界面。因误操作导致数据丢失，源之初和Deepseek概不负责。`,
+    unlock: () => true
+  },
+  {
+    id: 5,
+    title: '伤残秘境',
+    content: `解锁伤残秘境（购买升级 · 萌生7）以后，自动解锁伤残秘境界面，同时解锁伤残程度和伤残等级机制。
+
+攻击力×伤残等级^-0.3
+防御力×伤残等级^-0.25
+伤残生命增幅+10%×伤残等级。该增幅提供的生命值不可恢复，且复活后也处于已损失状态。
+伤残程度=10×(lg(生命上限)-lg(当前生命值))
+
+伤残程度按1伤残程度→10%伤害加成为厄凛娜斯提供伤害加成，该加成独立存在。`,
+    unlock: () => S.disabilityUnlocked
+  },
+  {
+    id: 6,
+    title: '织线',
+    content: `织线自动计算你这个存档历史上最多持有的凄残币可以购买几级对应的升级，只要是最高一级的升级价格比这个存档历史上最多持有的凄残币低，织线就能帮你自动购买到该等级。`,
+    unlock: () => S.weavingUnlocked
+  }
+];
+
+let tutorialWasMode = 'rest';
+let tutorialPaused = false;
+let currentTutorialId = 0;
+
+// 打开教程
+function openTutorial() {
+  $('btn-tutorial').classList.remove('blink');
+  try {
+    localStorage.setItem('ellinuss_tutorial_seen', '1');
+  } catch (e) {}
+  tutorialWasMode = S.mode;
+  if (S.mode !== 'rest') setMode('rest');
+  tutorialPaused = true;
+  $('tutorialOverlay').style.display = 'flex';
+  renderTutorialList();
+  showTutorial(currentTutorialId);
+}
+
+// 关闭教程
+function closeTutorial() {
+  $('tutorialOverlay').style.display = 'none';
+  tutorialPaused = false;
+  if (tutorialWasMode !== S.mode) setMode(tutorialWasMode);
+}
+
+// 渲染教程列表
+function renderTutorialList() {
+  const list = $('tutorialList');
+  let html = '';
+  for (let t of TUTORIAL_DATA) {
+    const unlocked = t.unlock();
+    if (!unlocked) continue;
+    const active = t.id === currentTutorialId ? 'active' : '';
+    html += `<div class="tutorial-item ${active}" data-id="${t.id}">${t.title}</div>`;
+  }
+  list.innerHTML = html;
+  list.querySelectorAll('.tutorial-item').forEach(el => {
+    el.onclick = () => {
+      currentTutorialId = parseInt(el.dataset.id, 10);
+      renderTutorialList();
+      showTutorial(currentTutorialId);
+    };
+  });
+}
+
+// 显示指定教程
+function showTutorial(id) {
+  const t = TUTORIAL_DATA.find(x => x.id === id);
+  if (!t) return;
+  $('tutorialTitle').textContent = t.title;
+  $('tutorialContent').textContent = t.content;
+}
+
+// 绑定按钮
+$('btn-tutorial').onclick = openTutorial;
+$('tutorialClose').onclick = closeTutorial;
+
+
+
+// ============================================================
+// 第二十二部分：启动 & 主循环
 // ============================================================
 let gameStarted = false;
 
@@ -2861,6 +3349,29 @@ function startGame() {
   const preservedStory = S.storyUnlocked || loadStoryUnlocked() || {};
   $('startScreen').style.display = 'none';
   $('mainGame').style.display = 'block';
+
+  // ★ 尝试加载自动存档
+  const autoData = loadAuto();
+  if (autoData) {
+    try {
+      deserialize(autoData);
+      // ★ 加载自动存档后强制切休息
+      S.mode = 'rest';
+      $('modeRest').classList.add('active');
+      $('modeFight').classList.remove('active');
+      $('reviveMask').style.display = 'none';
+      S.dead = false;
+      S.reviveTimer = 0;
+      log('自动存档已加载。', 'hl');
+      renderStoryReview();
+      renderGoal();
+      renderBattle();
+      return;
+    } catch (e) {
+      log('自动存档损坏，开始新游戏。', 'dmg');
+    }
+  }
+
   S.storyUnlocked = preservedStory;   // 恢复
 
   spawnMonster();
@@ -2879,6 +3390,11 @@ function startGame() {
   // ★ 新存档不继承 localStorage 的剧情解锁状态（老玩家开新档仍会触发剧情）
   // localStorage 只用于「剧情回顾」的跨存档保留，不用于自动触发判定
   renderStoryReview();
+
+  // ★ 教程按钮闪烁提示（新存档）
+  if (!localStorage.getItem('ellinuss_tutorial_seen')) {
+    $('btn-tutorial').classList.add('blink');
+  }
 }
 
 $('btn-start').onclick = startGame;
@@ -2902,9 +3418,36 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
-  if (gameStarted) {
+  if (gameStarted && !tutorialPaused) {
     tick(dt);
     checkFirst1e7();
+    if (!tutorialPaused) {
+      // ★ 自动存档
+      if (S.autoSaveInterval > 0) {
+        S.autoSaveTimer += dt;
+        if (S.autoSaveTimer >= S.autoSaveInterval) {
+          S.autoSaveTimer = 0;
+          saveAuto();
+        }
+      }
+      // 禁忌知识倒计时
+      if (forbiddenActive) {
+        forbiddenTimer -= dt;
+        if (forbiddenTimer <= 0) deactivateForbidden();
+        else $('forbiddenCd').textContent = Math.ceil(forbiddenTimer) + 's';
+      }
+    }
+    // 如果当前在选项 TAB，实时更新自动存档倒计时
+    if (currentTab === 'options') {
+      if (S.autoSaveInterval > 0) {
+        $('lastAutoSaveInfo').style.display = 'block';
+        let sinceLast = S.t - S.lastAutoSave;
+        if (sinceLast < 0) sinceLast = 0;
+        $('lastAutoSaveSec').textContent = sinceLast.toFixed(1);
+      } else {
+        $('lastAutoSaveInfo').style.display = 'none';
+      }
+    }
   }
   requestAnimationFrame(loop);
 }
