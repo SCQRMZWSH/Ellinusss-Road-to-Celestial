@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 3.12</title>
+<title>厄凛娜斯的成神之路 · 3.13</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -753,6 +753,56 @@
     cursor: not-allowed;
   }
   
+  /* 音乐列表项 */
+  .music-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    background: #0a0610;
+    border: 1px solid #2a1540;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #b8a8c8;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .music-item:hover {
+    background: #1a0a2a;
+    border-color: #a87ad8;
+  }
+  .music-item.playing {
+    border-color: #ff6ad5;
+    color: #ffd8ff;
+  }
+  .music-item .mi-check {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #4a2a6a;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #6ad58a;
+  }
+  .music-item .mi-check.checked::after {
+    content: '✔';
+  }
+  .music-item .mi-name {
+    flex: 1;
+  }
+  .music-item .mi-playing {
+    color: #ff6ad5;
+    font-size: 11px;
+  }
+
+  .music-item .mi-loading {
+    color: #d5a86a;
+    font-size: 11px;
+  }
+
 </style>
 </head>
 <body>
@@ -773,7 +823,10 @@
 
   <div style="position:relative;margin-bottom:4px;">
     <h1 style="margin-bottom:0;">厄凛娜斯的成神之路</h1>
-    <button id="btn-tutorial" style="position:absolute;right:0;top:50%;transform:translateY(-50%);width:auto;padding:6px 12px;font-size:12px;text-align:center;margin:0;">教程 / 关于……</button>
+    <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;gap:6px;">
+      <button id="btn-music-toggle" style="width:auto;padding:6px 12px;font-size:12px;text-align:center;margin:0;">音乐：关</button>
+      <button id="btn-tutorial" style="width:auto;padding:6px 12px;font-size:12px;text-align:center;margin:0;">教程 / 关于……</button>
+    </div>
   </div>
   <div class="sub">萌生 → 残根</div>
 
@@ -1173,6 +1226,37 @@
           </div>
           <div class="opt-row" style="margin-top:6px;">
             <button id="btn-manual-autosave" style="text-align:center;font-size:12px;">立即自动存档</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>音乐</h2>
+          <div class="stat" style="align-items:center;">
+            <span>音乐开关</span>
+            <span>
+              <button id="music-toggle-2" style="width:auto;padding:4px 12px;font-size:12px;margin:0;text-align:center;">关闭</button>
+            </span>
+          </div>
+          <div class="stat" style="align-items:center;">
+            <span>音乐音量</span>
+            <span style="display:flex;align-items:center;gap:8px;">
+              <input type="range" id="music-volume" min="0" max="100" value="100" style="width:120px;">
+              <span id="music-volume-label" style="font-family:Consolas,monospace;font-size:12px;min-width:40px;text-align:right;">100%</span>
+            </span>
+          </div>
+          <div class="stat" style="align-items:center;">
+            <span>播放模式</span>
+            <span>
+              <select id="music-mode" style="background:#0a0610;border:1px solid #4a2a6a;color:#e8d8ff;border-radius:4px;padding:2px 6px;font-family:Consolas,monospace;font-size:12px;">
+                <option value="list">列表顺序循环</option>
+                <option value="single">单曲循环</option>
+                <option value="random">随机播放</option>
+                <option value="custom">自定义列表循环</option>
+              </select>
+            </span>
+          </div>
+          <div style="margin-top:8px;">
+            <div style="font-size:12px;color:#b8a8c8;margin-bottom:6px;">音乐列表</div>
+            <div id="music-list"></div>
           </div>
         </div>
         <div class="panel" style="border-color:#8a2a2a;">
@@ -1751,7 +1835,7 @@ const STORY_DATA = {
       { char: '伤残', text: '你应该没有家吧？我让你住我的伤残秘境，怎么样？' },
       { char: '厄凛娜斯', text: '可......可以' },
       { char: '伤残', text: '我们这房间不贵，买个属于自己的小窝小点的要10亿凄残币' },
-      { char: '伤残', text: '给你打个骨折吧，100万凄残币' },
+      { char: '伤残', text: '给你打个骨折吧，1000万凄残币' },
       { char: '厄凛娜斯', text: '不是，多少？' },
       { char: '厄凛娜斯', text: '看来要自己攒一笔钱了' }
     ]
@@ -3335,10 +3419,157 @@ function showTutorial(id) {
 $('btn-tutorial').onclick = openTutorial;
 $('tutorialClose').onclick = closeTutorial;
 
+// ============================================================
+// 第二十二部分：音乐系统
+// ============================================================
+const MUSIC_DATA = [
+  { id: 'to_be_ellinuss', name: '予以厄凛娜斯', url: 'https://githubproxy.cc/https://raw.githubusercontent.com/SCQRMZWSH/Ellinusss-Road-to-Celestial/main/001_To_be_Ellinuss.mp3' },
+  { id: 'shangcan_city', name: '伤残城', url: 'https://githubproxy.cc/https://raw.githubusercontent.com/SCQRMZWSH/Ellinusss-Road-to-Celestial/main/002_ShangCan_City.mp3' }
+];
 
+const MUSIC = {
+  enabled: false,
+  volume: 1.0,            // 音量 0~1.0
+  mode: 'list',
+  currentIndex: 0,
+  customList: [],
+  audio: null,
+  isPlaying: false,
+  loading: false          // ★ 加载中
+};
+
+function initMusic() {
+  MUSIC.audio = $('bgm');
+  MUSIC.audio.volume = MUSIC.volume;
+  // 自定义列表默认全选
+  MUSIC.customList = MUSIC_DATA.map(m => m.id);
+  renderMusicList();
+  // 绑定事件
+  $('btn-music-toggle').onclick = () => toggleMusic();
+  $('music-toggle-2').onclick = () => toggleMusic();
+  $('music-volume').oninput = () => {
+    MUSIC.volume = parseInt($('music-volume').value, 10) / 100;
+    MUSIC.audio.volume = MUSIC.volume;
+    $('music-volume-label').textContent = $('music-volume').value + '%';
+  };
+  $('music-mode').onchange = () => {
+    MUSIC.mode = $('music-mode').value;
+    log(`播放模式：${$('music-mode').selectedOptions[0].textContent}`);
+  };
+  // ★ 加载状态事件
+  MUSIC.audio.oncanplay = () => {
+    MUSIC.loading = false;
+    MUSIC.isPlaying = true;
+    renderMusicList();
+  };
+  MUSIC.audio.onwaiting = () => {
+    MUSIC.loading = true;
+    renderMusicList();
+  };
+  MUSIC.audio.onplaying = () => {
+    MUSIC.loading = false;
+    MUSIC.isPlaying = true;
+    renderMusicList();
+  };
+  MUSIC.audio.onerror = () => {
+    MUSIC.loading = false;
+    MUSIC.isPlaying = false;
+    renderMusicList();
+  };
+}
+
+function toggleMusic() {
+  MUSIC.enabled = !MUSIC.enabled;
+  $('btn-music-toggle').textContent = MUSIC.enabled ? '音乐：开' : '音乐：关';
+  $('music-toggle-2').textContent = MUSIC.enabled ? '开启' : '关闭';
+  if (MUSIC.enabled) {
+    playMusic(MUSIC.currentIndex);
+  } else {
+    MUSIC.audio.pause();
+  }
+  renderMusicList();
+}
+
+function playMusic(index) {
+  if (!MUSIC_DATA[index]) return;
+  MUSIC.currentIndex = index;
+  MUSIC.audio.src = MUSIC_DATA[index].url;
+  MUSIC.audio.volume = MUSIC.volume;
+  MUSIC.loading = true;          // ★ 加载中
+  MUSIC.isPlaying = false;
+  renderMusicList();
+  MUSIC.audio.play().catch(e => {
+    log('音乐播放失败：' + e.message, 'dmg');
+    MUSIC.loading = false;
+    renderMusicList();
+  });
+}
+
+function nextMusic() {
+  if (MUSIC.mode === 'single') {
+    playMusic(MUSIC.currentIndex);
+    return;
+  }
+  if (MUSIC.mode === 'random') {
+    let idx = Math.floor(Math.random() * MUSIC_DATA.length);
+    playMusic(idx);
+    return;
+  }
+  if (MUSIC.mode === 'custom') {
+    // 只播放 customList 里的
+    let available = MUSIC_DATA.map((m, i) => i).filter(i => MUSIC.customList.includes(MUSIC_DATA[i].id));
+    if (available.length === 0) { MUSIC.audio.pause(); return; }
+    let curPos = available.indexOf(MUSIC.currentIndex);
+    let nextPos = (curPos + 1) % available.length;
+    playMusic(available[nextPos]);
+    return;
+  }
+  // list：顺序循环
+  let next = (MUSIC.currentIndex + 1) % MUSIC_DATA.length;
+  playMusic(next);
+}
+
+function renderMusicList() {
+  const list = $('music-list');
+  if (!list) return;
+  let html = '';
+  for (let i = 0; i < MUSIC_DATA.length; i++) {
+    const m = MUSIC_DATA[i];
+    const checked = MUSIC.customList.includes(m.id);
+    const playing = (i === MUSIC.currentIndex && MUSIC.isPlaying && MUSIC.enabled);
+    const loading = (i === MUSIC.currentIndex && MUSIC.loading && MUSIC.enabled);
+    html += `<div class="music-item ${playing ? 'playing' : ''}" data-idx="${i}">
+      <div class="mi-check ${checked ? 'checked' : ''}" data-check="${m.id}"></div>
+      <div class="mi-name">${m.name}</div>
+      ${loading ? '<div class="mi-loading">加载中……</div>' : ''}
+      ${playing ? '<div class="mi-playing">▶ 播放中</div>' : ''}
+    </div>`;
+  }
+  list.innerHTML = html;
+  // 点击整行：播放
+  list.querySelectorAll('.music-item').forEach(el => {
+    el.onclick = (e) => {
+      if (e.target.classList.contains('mi-check')) {
+        // 点复选框：切换自定义列表
+        const id = e.target.dataset.check;
+        let idx = MUSIC.customList.indexOf(id);
+        if (idx >= 0) MUSIC.customList.splice(idx, 1);
+        else MUSIC.customList.push(id);
+        renderMusicList();
+        return;
+      }
+      const idx = parseInt(el.dataset.idx, 10);
+      if (MUSIC.enabled) {
+        playMusic(idx);
+      } else {
+        log('音乐未开启，请先开启音乐开关。');
+      }
+    };
+  });
+}
 
 // ============================================================
-// 第二十二部分：启动 & 主循环
+// 第二十三部分：启动 & 主循环
 // ============================================================
 let gameStarted = false;
 
@@ -3366,6 +3597,7 @@ function startGame() {
       renderStoryReview();
       renderGoal();
       renderBattle();
+      initMusic();
       return;
     } catch (e) {
       log('自动存档损坏，开始新游戏。', 'dmg');
@@ -3385,6 +3617,7 @@ function startGame() {
   renderAchievementTab();
   renderOptionsTab();
   renderGoal();
+  initMusic(); // 初始化音乐
 
   // 加载本地剧情解锁状态
   // ★ 新存档不继承 localStorage 的剧情解锁状态（老玩家开新档仍会触发剧情）
@@ -3453,5 +3686,6 @@ function loop(now) {
 }
 requestAnimationFrame(loop);
 </script>
+<audio id="bgm" loop></audio>
 </body>
 </html>
