@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 3.23</title>
+<title>厄凛娜斯的成神之路 · 4.8</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -623,6 +623,28 @@
     border-color: #2ad52a;
     color: #a8f5b8;
   }
+  /* ★ 融说话时，整个窗口变灰白 */
+  #storyBox.char-rong {
+    background: #4a4a4a;              /* 深灰底 */
+    border-color: #9c9c9c;            /* 灰边框 */
+  }
+  #storyBox.char-rong #storyChar {
+    color: #c4c4c4;
+    border-bottom-color: #9c9c9c;
+  }
+  #storyBox.char-rong #storyPrev,
+  #storyBox.char-rong #storyNext {
+    background: #4a4a4a;
+    border-color: #9c9c9c;
+    color: #c4c4c4;
+  }
+  #storyBox.char-rong #storyPrev:hover,
+  #storyBox.char-rong #storyNext:hover {
+    background: #6a6a6a;
+    border-color: #c4c4c4;
+    color: #e8e8e8;
+  }
+  
   #storyChar {
     font-size: 16px;
     font-weight: bold;
@@ -874,6 +896,19 @@
               <div class="stat"><span>实际伤害</span><span id="sk-dmg">15</span></div>
               <div class="stat"><span>先手时长</span><span id="s-first">2.0s</span></div>
             </div>
+            <div id="skill-yuanyin" style="background:#0a0610;border:1px solid #4a2a6a;border-radius:6px;padding:10px;margin-bottom:6px;display:none;">
+              <div style="font-size:13px;color:#ff6ad5;margin-bottom:6px;">伤残技【怨引】</div>
+              <div style="font-size:11px;color:#8a7a9a;line-height:1.6;margin-bottom:8px;">
+                视作普通攻击。攻击间隔 1.6s，凝聚怨气攻击，发射武器火力 0.4、攻击范围 5m 的飞弹，有 20% 概率引导所有邪莲花攻击敌人 1 次。
+              </div>
+              <div class="stat"><span>武器火力</span><span id="yy-fp">0.4</span></div>
+              <div class="stat"><span>攻击间隔</span><span id="yy-int">1.6s</span></div>
+              <div class="stat"><span>攻击范围</span><span id="yy-range">5.0m</span></div>
+              <div class="stat" style="flex-wrap:wrap;"><span>实际伤害</span><span id="yy-dmg">0</span></div>
+              <div class="stat" style="flex-wrap:wrap;"><span style="font-size:11px;color:#8a7a9a;">引导邪莲花总伤害</span><span id="yy-proc-dmg" style="font-size:11px;color:#d5a86a;">0</span></div>
+              <div class="stat"><span>引导概率</span><span id="yy-proc">20%</span><span id="yy-proc-status" style="color:#d58a8a;margin-left:6px;">✖</span></div>
+              <button id="btn-switch-yuanyin" style="text-align:center;margin-top:6px;display:none;">切换普通攻击至【怨引】，这会重置普通攻击的攻击间隔。</button>
+            </div>
             <div id="skill-xienian" style="background:#0a0610;border:1px solid #4a2a6a;border-radius:6px;padding:10px;display:none;">
               <div style="font-size:13px;color:#ff6ad5;margin-bottom:6px;">魔神技【邪念无伤】</div>
               <div id="xienian-desc" style="font-size:11px;color:#8a7a9a;line-height:1.6;margin-bottom:8px;"></div>
@@ -884,21 +919,32 @@
             <div id="skill-lotus" style="background:#0a0610;border:1px solid #4a2a6a;border-radius:6px;padding:10px;margin-bottom:6px;display:none;">
               <div style="font-size:13px;color:#ff6ad5;margin-bottom:6px;">伤残技【邪莲之种】</div>
               <div style="font-size:11px;color:#8a7a9a;line-height:1.6;margin-bottom:8px;">
-                每 <span id="lotus-seed-interval">20</span>s 获得 1 枚邪莲之种，最多积攒 <span id="lotus-seed-max">1</span> 个。释放 CD <span id="lotus-release-cd">8</span>s。消耗 15 点伤残值和 1 秒时间种下，4 秒后长成邪莲花。
+                每 <span id="lotus-seed-interval">20</span>s 获得 1 枚邪莲之种，最多积攒 <span id="lotus-seed-max">1</span> 个。释放 CD <span id="lotus-release-cd">8</span>s。消耗 15 点伤残值和 1 秒时间种下，4 秒后长成邪莲花。邪莲花最多存在 <span id="lotus-max-count">1</span> 个且最多存在 30s（种下第 <span id="lotus-max-count-2">2</span> 个邪莲花时第 1 个邪莲花立刻凋亡），ATK ≡ 12%×厄凛娜斯的伤残等级，DEF ≡ (1%×厄凛娜斯的HP)^0.2，HP ≡ 3%×厄凛娜斯的HP，伤残等级 ≡ 10%×厄凛娜斯的伤残等级（只为邪莲花提供伤残值，不提供增减益效果），攻击范围 <span id="lotus-range-desc">2</span>m，攻击间隔 <span id="lotus-interval-desc">1.4</span>s，武器火力 1.0。
               </div>
-              <div class="stat"><span>充能 CD</span><span id="lotus-charge-cd">20s</span></div>
-              <div class="stat"><span>邪莲之种</span><span id="lotus-seeds">0 / 1</span></div>
-              <div class="stat"><span>释放 CD</span><span id="lotus-cd">0s</span></div>
-              <div class="stat"><span>邪莲花</span><span id="lotus-count">0 / 1</span></div>
-              <div class="stat"><span>邪莲花攻击范围</span><span id="lotus-range">0m</span></div>
-              <div class="stat"><span>邪莲花攻击间隔</span><span id="lotus-interval">0s</span></div>
-              <div class="stat"><span>邪莲花攻击</span><span id="lotus-atk">0</span></div>
-              <div class="stat"><span>邪莲花防御</span><span id="lotus-def">0</span></div>
-              <div class="stat"><span>邪莲花伤残等级</span><span id="lotus-dlv">0</span></div>
-              <div class="stat"><span>邪莲花继承增伤</span><span id="lotus-dmg-bonus">+0%</span></div>
-              <div class="stat"><span>剩余存在</span><span id="lotus-remain">无</span></div>
-              <div class="stat" id="lotus-front-hp-row" style="display:none;"><span>前排邪莲花HP</span><span id="lotus-front-hp">0 / 0</span></div>
-              <div class="stat" id="lotus-front-dv-row" style="display:none;"><span>前排邪莲花伤残值</span><span id="lotus-front-dv">0 / 0</span></div>
+              <!-- 两栏信息 -->
+              <div style="display:flex;gap:12px;margin-bottom:6px;">
+                <!-- 左栏 -->
+                <div style="flex:1;">
+                  <div class="stat"><span>充能 CD</span><span id="lotus-charge-cd">20s</span></div>
+                  <div class="stat"><span>邪莲之种</span><span id="lotus-seeds">0 / 1</span></div>
+                  <div class="stat"><span>释放 CD</span><span id="lotus-cd">0s</span></div>
+                  <div class="stat"><span>邪莲花</span><span id="lotus-count">0 / 1</span></div>
+                  <div class="stat"><span>邪莲花攻击间隔</span><span id="lotus-interval">0s</span></div>
+                  <div class="stat"><span>邪莲花攻击范围</span><span id="lotus-range">0m</span></div>
+                  <div class="stat"><span>邪莲花单次伤害</span><span id="lotus-dmg-per-hit">0</span></div>
+                </div>
+                <!-- 右栏 -->
+                <div style="flex:1;">
+                  <div class="stat"><span>邪莲花攻击</span><span id="lotus-atk">0</span></div>
+                  <div class="stat"><span>邪莲花防御</span><span id="lotus-def">0</span></div>
+                  <div class="stat"><span>邪莲花伤残等级</span><span id="lotus-dlv">0</span></div>
+                  <div class="stat"><span>邪莲花继承增伤</span><span id="lotus-dmg-bonus">+0%</span></div>
+                  <div class="stat" id="lotus-front-hp-row" style="display:none;"><span>前排邪莲花HP</span><span id="lotus-front-hp">0 / 0</span></div>
+                  <div class="stat" id="lotus-front-dv-row" style="display:none;"><span>前排邪莲花伤残值</span><span id="lotus-front-dv">0 / 0</span></div>
+                </div>
+              </div>
+              <!-- 单独一整行：剩余存在 -->
+              <div class="stat" style="flex-wrap:wrap;"><span>剩余存在</span><span id="lotus-remain" style="text-align:right;word-break:break-all;">无</span></div>
               <button id="btn-release-lotus" style="text-align:center;margin-top:6px;">种下邪莲之种（后排）</button>
               <button id="btn-release-lotus-front" style="text-align:center;margin-top:6px;">种下邪莲之种（前排，承伤）</button>
             </div>
@@ -1025,6 +1071,21 @@
             <span class="desc">价格：100000 × 1.25^n，休息时每秒额外恢复 5% 生命值，上限 6 级</span></button>
           <button id="up7b" class="green-upgrade" style="display:none;">伤残秘境 <span class="lvl" id="l7b">已购买</span><span class="cost" id="c7b">—</span>
             <span class="desc">已解锁伤残秘境。</span></button>
+        </div>
+        <div class="panel" id="panel-xie" style="display:none;">
+          <h2>升级 · 邪茎</h2>
+          <button id="ux1" style="display:none;">伤残突破 <span class="lvl" id="lx1">Lv.0</span><span class="cost" id="cx1">0</span>
+            <span class="desc">伤残等级 +10，包含当前等级和等级上限。上限4级。价格：10^(9+0.75n)</span></button>
+          <button id="ux2" style="display:none;">怨引 · 循环 <span class="lvl" id="lx2">Lv.0</span><span class="cost" id="cx2">0</span>
+            <span class="desc">【怨引】攻击间隔 -0.1s，上限8级。价格：(10^9)×1.25^n</span></button>
+          <button id="ux3" style="display:none;">怨引 · 神射 <span class="lvl" id="lx3">Lv.0</span><span class="cost" id="cx3">0</span>
+            <span class="desc">【怨引】攻击范围 +1m，上限15级。价格：(2.5×10^8)×2^n</span></button>
+          <button id="ux4" style="display:none;">怨引 · 滋养 <span class="lvl" id="lx4">Lv.0</span><span class="cost" id="cx4">0</span>
+            <span class="desc">【怨引】引导所有邪莲花攻击概率 +5%，上限4级。价格：10^(9+n)</span></button>
+          <button id="ux5" style="display:none;">会心穿透 <span class="lvl" id="lx5">Lv.0</span><span class="cost" id="cx5">0</span>
+            <span class="desc">每级使怪物防御力 -1，可以因此使怪物防御力降低至 0 以下。价格：(1.33×10^10)×11.4^n</span></button>
+          <button id="ux6" style="display:none;">更邪修的休息 <span class="lvl" id="lx6">Lv.0</span><span class="cost" id="cx6">抹除者送你的</span>
+            <span class="desc">休息将不会恢复生命值。上限1级。在0级时购买会变为1级并生效，在1级时购买会变为0级并失效。</span></button>
         </div>
       </div>
       <div class="col">
@@ -1404,6 +1465,7 @@ function numCmp(a, b) {
 
 // 格式化：显示保留 3 位小数
 function fmt(n) {
+  if (!n) return '0';   // ★ null/undefined 返回 '0'
   if (n.m === 0) return '0';
   let mant = n.m.toFixed(3).replace(/\.?0+$/, '');
   return `${mant}×10^${n.e}`;
@@ -1446,6 +1508,15 @@ const S = {
   monsterActive: false,    // 怪物是否已激活
   monsterActivateAt: 0,    // 怪物激活时刻
   atkTimer: 0,
+  // 怨引
+  yuanyinUnlocked: false,    // 是否解锁怨引
+  normalAttack: '棘刺',       // 当前普通攻击：'棘刺' 或 '怨引'
+  yuanyinInterval: 1.6,
+  yuanyinRange: 5.0,
+  yuanyinFirepower: 0.4,
+  yuanyinProc: 0.2,
+  yuanyinLastProc: false,   // 上次怨引是否触发
+  yuanyinProcDmg: makeNum(0, 0),   // 上次引导邪莲花总伤害
   // 邪莲之种
   lotusUnlocked: false,          // 是否解锁邪莲之种
   lotusSeeds: 0,                 // 当前邪莲之种数量
@@ -1466,6 +1537,7 @@ const S = {
   // 升级等级
   lv: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0 },
   lvRoot: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0 },
+  lvXie: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 }, // 升级 · 邪茎（独立）
   // 进度
   done: false,
   stage: 1,              // 1=萌生，2=残根
@@ -1474,7 +1546,7 @@ const S = {
   reviveTimer: 0,
   mode: 'rest',
   // 成就
-  ach: { 11:false, 12:false, 13:false, 14:false, 21:false, 22:false, 23:false, 24:false, 31:false, 32:false },
+  ach: { 11:false, 12:false, 13:false, 14:false, 21:false, 22:false, 23:false, 24:false, 31:false, 32:false, 33:false, 34:false, 41:false },
   moneyMultiplier: 1.0,
   xienianUnlocked: false,
   atkToHpRate: 12,
@@ -1505,6 +1577,9 @@ const S = {
   lotusPlantPosition: 'back',   // 当前种植位置
   battleDamagePlayer: makeNum(0, 0),   // 本场战斗厄凛娜斯输出
   battleDamageLotus: makeNum(0, 0),    // 本场战斗邪莲花输出
+  // 邪茎阶段及升级效果
+  expFormulaChanged: false,
+  disabilityMax: 100,
 };
 
 // ============================================================
@@ -1527,6 +1602,12 @@ function costR7(n) { return numMul(makeNum(1, 7), numFrom(Math.pow(1.5, n))); }
 function costR8(n) { return numFrom(Math.pow(10, 6 + n)); }
 function costR9(n) { return numMul(makeNum(2, 7), numFrom(Math.pow(1.25, n))); }
 function costR10(n) { return numFrom(Math.pow(10, 8 + n)); }
+// 邪茎
+function costX1(n) { return numFrom(Math.pow(10, 9 + 0.75 * n)); }
+function costX2(n) { return numMul(makeNum(1, 9), numFrom(Math.pow(1.25, n))); }
+function costX3(n) { return numMul(makeNum(2.5, 8), numFrom(Math.pow(2, n))); }
+function costX4(n) { return numFrom(Math.pow(10, 9 + n)); }
+function costX5(n) { return numMul(makeNum(1.33, 10), numFrom(Math.pow(11.4, n))); }
 
 // ============================================================
 // 第四部分：伤残系统核心
@@ -1636,15 +1717,18 @@ function recalc() {
 
 // 伤残等级升级所需经验 = 当前等级的平方
 function disabilityExpNeeded(lv) {
+  if (S.expFormulaChanged) {
+    return Math.max(Math.pow(lv - 140, 2), 1);
+  }
   return lv * lv;
 }
 
 // 增加伤残经验
 function addDisabilityExp(amount) {
   if (!S.disabilityUnlocked) return;
-  if (S.disabilityLv >= 100) return;   // 满级不再积累
+  if (S.disabilityLv >= S.disabilityMax) return;   // 满级不再积累
   S.disabilityExp += amount;
-  while (S.disabilityLv < 100) {
+  while (S.disabilityLv < S.disabilityMax) {
     let need = disabilityExpNeeded(S.disabilityLv + 1);
     if (S.disabilityExp >= need) {
       S.disabilityExp -= need;
@@ -1661,18 +1745,32 @@ function addDisabilityExp(amount) {
       if (S.disabilityLv >= 31 && !S.ach[23]) {
         completeAchievement(23);
       }
+      // 成就33
+      if (S.disabilityLv >= 100 && !S.ach[33]) {
+        completeAchievement(33);
+      }
+      // 成就34
+      if (S.disabilityLv > 100 && !S.ach[34]) {
+        completeAchievement(34);
+      }
     } else {
       break;
     }
   }
-  if (S.disabilityLv >= 100) {
+  if (S.disabilityLv >= S.disabilityMax) {
     S.disabilityExp = 0;
-    log('伤残等级已达上限 100。', 'hl');
-    // ★ 伤残等级满级直接触发终局
-    if (!S.done) {
-      S.stage = 2;
-      win();
-    }
+    log(`伤残等级已达上限 ${S.disabilityMax}。`, 'hl');
+  }
+  if (S.stage < 3 && S.disabilityLv >= 100) {
+    S.stage = 3;
+    log('第二阶段 · 残根：完成。进入第三阶段 · 邪茎。', 'hl');
+  }
+  // ★ 剧情触发
+  if (S.disabilityLv >= 100 && !S.storyUnlocked['3-1']) {
+    checkStoryTrigger('3-1');
+  }
+  if (S.disabilityLv > 100 && !S.storyUnlocked['3-2']) {
+    checkStoryTrigger('3-2');
   }
 
 }
@@ -1683,10 +1781,15 @@ function addDisabilityExp(amount) {
 function makeMonster(lv) {
   let mul = Math.pow(1.1, lv - 1);
   let dropMul = Math.pow(S.dropMul, lv - 1);
+  // ★ 51 级后拥有防御
+  let defVal = 0;
+  if (lv > 50) {
+    defVal = 1 + 0.2 * (lv - 50);
+  }
   return {
     lv,
     atk: numFrom(15 * mul),
-    def: numFrom(0),
+    def: numFrom(defVal),
     maxHp: numFrom(100 * mul),
     hp: numFrom(100 * mul),
     speed: 1.0,
@@ -1698,24 +1801,29 @@ function makeMonster(lv) {
 }
 
 // 伤害公式
-function calcDamage(atkNum, defNum, firepower) {
-  // ★ 禁忌知识3：基础伤害 = 2
+function calcDamage(atkNum, defNum, firepower, isPlayerAttack) {
   if (forbiddenDamageOverride) {
     return numFrom(2);
   }
-  let diff;
-  if (defNum.m === 0) {
-    diff = atkNum;
-  } else if (atkNum.e - defNum.e > 15) {
-    diff = atkNum;
+  // ★ 会心穿透：只对玩家攻击生效
+  let effectiveDef = 0;
+  if (isPlayerAttack && S.lvXie && S.lvXie[5] > 0) {
+    if (defNum.m > 0) {
+      effectiveDef = defNum.m * Math.pow(10, defNum.e) - S.lvXie[5];
+    } else {
+      effectiveDef = -S.lvXie[5];
+    }
   } else {
-    let aVal = atkNum.m * Math.pow(10, atkNum.e);
-    let dVal = defNum.m * Math.pow(10, defNum.e);
-    let raw = aVal - dVal;
-    if (raw < 2) raw = 2;
-    diff = numFrom(raw);
+    if (defNum.m > 0) {
+      effectiveDef = defNum.m * Math.pow(10, defNum.e);
+    } else {
+      effectiveDef = 0;
+    }
   }
-  return numMul(diff, numFrom(firepower));
+  let aVal = atkNum.m * Math.pow(10, atkNum.e);
+  let raw = aVal - effectiveDef;
+  if (raw < 2) raw = 2;
+  return numMul(numFrom(raw), numFrom(firepower));
 }
 
 // 独立加成：时间抹除域
@@ -1895,6 +2003,17 @@ function completeAchievement(id) {
     log('成就奖励：邪莲之种的存储上限和存在上限 +1。', 'hl');
     // 实际上限在 lotusSeedMax() 和 lotusMax() 里算
   }
+  if (id === 33) {
+    S.yuanyinUnlocked = true;
+    log('成就奖励：解锁伤残技【怨引】。', 'hl');
+  }
+  if (id === 34) {
+    S.expFormulaChanged = true;
+    log('成就奖励：伤残等级升级所需经验公式改为 max((伤残等级-140)^2, 1)。', 'hl');
+  }
+  if (id === 41) {
+    log('成就奖励：解锁升级 · 邪茎5「会心穿透」。', 'hl');
+  }
 
   // 刷新成就面板
   renderAchievementTab();
@@ -1912,7 +2031,10 @@ function getAchievementName(id) {
     23: '距离伤残值更新还剩e0.5小时',
     24: '等等，伤残秘境哪里来的织者？',
     31: '万血战士',
-    32: '火力压制'
+    32: '火力压制',
+    33: '满级，伤残大佬',
+    34: '打破满分',
+    41: '怎么这么硬',
   };
   return names[id] || ('成就' + id);
 }
@@ -1986,13 +2108,84 @@ const STORY_DATA = {
       { char: '厄凛娜斯', text: '突然感觉自己好耐造啊' },
       { char: '厄凛娜斯', text: '这真的不是幻觉么' }
     ]
-  }
+  },
+  '3-1': {
+    stage: '邪茎',
+    condition: '伤残等级首次达到 100',
+    title: '织线与伤残',
+    lines: [
+      { char: '伤残', text: '恭喜你厄凛娜斯，你已经达到了伤残等级的极限' },
+      { char: '厄凛娜斯', text: '也感谢你赐予我伤残造物的力量' },
+      { char: '伤残', text: '伤残的力量已经到达极限了，但是我对伤残秘境的开发程度不足百分之十' },
+      { char: '伤残', text: '也只是为了能自然控制在秘境负荷以内' },
+      { char: '伤残', text: '不像凄惨秘境那边，秘境负荷动不动就冲着百分之八九十去了' },
+      { char: '伤残', text: '到可好，他们还在开发新的层级，就不怕秘境炸了' },
+      { char: '融', text: '这便是织线，时时刻刻控制秘境负荷' },
+      { char: '融', text: '负荷一直在临界点以下，秘境怎么能轻易炸了？' },
+      { char: '厄凛娜斯', text: '你的意思是，伤残秘境大小还能扩大很多倍？' },
+      { char: '融', text: '伤残，你的秘境负荷才12%，只需要把你那堆植物养分供给量降低' },
+      { char: '融', text: '但是改为持续供给伤残液，秘境负荷直接降到10%' },
+      { char: '伤残', text: '伤残秘境的事轮不到凄惨秘境的人管' },
+      { char: '伤残', text: '等等，融，你什么时候来的？' },
+      { char: '融', text: '就在几分钟前，这不是重点。你就看看这位叫厄凛娜斯的伤残造物……' },
+      { char: '厄凛娜斯', text: '不应该说是邪莲造物么？' },
+      { char: '融', text: '无所谓了。总之没有我们织者的织线，你能这么快百级伤残？' },
+      { char: '厄凛娜斯', text: '确实好快啊' },
+      { char: '融', text: '信我，你的伤残等级还没到你的极限。' },
+      { char: '融', text: '伤残的伤残等级常态下就150级，你才多少' },
+      { char: '伤残', text: '融，你别太过分了，我的小秘密你就这么随便说出来了' },
+      { char: '融', text: '差点忘了，厄凛娜斯，你可能还不完全认识我' },
+      { char: '融', text: '我叫融，是第一位织者，几年前死过一次' },
+      { char: '融', text: '但是，只要织线不断，我就可以织出新的躯体重生' },
+      { char: '融', text: '相信我，突破等级上限很容易' },
+      { char: '融', text: '毕竟织线已经为你提供远超你可及的生命了' },
+      { char: '伤残', text: '喂！融！我还在这呢！' },
+      { char: '融', text: '我先走了。织线编历世界。' },
+      { char: '厄凛娜斯', text: '与我连接的织线已经有3条了' },
+      { char: '厄凛娜斯', text: '在下一条织线与我相连之前，我想' },
+      { char: '厄凛娜斯', text: '先试试百级伤残带给我的新能力' }
+    ]
+  },
+  '3-2': {
+    stage: '邪茎',
+    condition: '伤残等级首次超过 100',
+    title: '突破禁制',
+    lines: [
+      { char: '厄凛娜斯', text: '110级？' },
+      { char: '厄凛娜斯', text: '伤残认为，这不可能发生在我身上' },
+      { char: '厄凛娜斯', text: '但是', flash: { color: '#0a0610', period: 1400 } },
+      { char: '厄凛娜斯', text: '我已经', flash: { color: '#0a0610', period: 1200 } },
+      { char: '厄凛娜斯', text: '突破了禁制限制！！！！', flash: { color: '#0a0610', period: 1000 } }
+    ]
+  },
+  '3-3': {
+    stage: '邪茎',
+    condition: '首次攻击 51 级及以上怪物',
+    title: '刮痧',
+    lines: [
+      { char: '厄凛娜斯', text: '怎么怪物突然变得好硬' },
+      { char: '厄凛娜斯', text: '棘刺就像在刮痧' },
+      { char: '厄凛娜斯', text: '希望邪莲花给力吧' },
+      { char: '厄凛娜斯', text: '我突然感觉我脑子里多了些禁忌知识' },
+      { char: '厄凛娜斯', text: '是啥呢？（提示：去升级看看，且不要忘了这个新升级的存在）' }
+    ]
+  },
+  '3-4': {
+    stage: '邪茎',
+    condition: '首次击败 51 级及以上怪物',
+    title: '穿透',
+    lines: [
+      { char: '厄凛娜斯', text: '好尖锐的刺刀' },
+      { char: '厄凛娜斯', text: '如果我的穿透能力能达到这个水准就好了' }
+    ]
+  },
 };
 
 // 角色颜色
 const STORY_CHAR_COLORS = {
   '厄凛娜斯': '#c89ae8',   // 紫色
-  '伤残': '#6ad58a'        // ★ 和紫色等亮度的绿色
+  '伤残': '#6ad58a',   // 和紫色等亮度的绿色
+  '融': '#c4c4c4',   // 织线配色
 };
 
 // 当前正在播放的剧情状态
@@ -2031,9 +2224,11 @@ function renderStory() {
 
   // ★ 根据角色切换整个窗口的样式（② 会用到）
   const box = $('storyBox');
-  box.classList.remove('char-shangcan');
+  box.classList.remove('char-shangcan', 'char-rong');
   if (line.char === '伤残') {
     box.classList.add('char-shangcan');
+  } else if (line.char === '融') {
+    box.classList.add('char-rong');
   }
 
   // 按钮显示逻辑
@@ -2046,6 +2241,30 @@ function renderStory() {
 
   // 动态设置弹窗大小
   resizeStoryBox();
+
+  // ★ 闪屏效果
+  const flashData = line.flash;
+  const storyBox = $('storyBox');
+  // 清除之前的闪烁
+  if (storyBox._flashInterval) {
+    clearInterval(storyBox._flashInterval);
+    storyBox._flashInterval = null;
+    storyBox.style.background = '';
+    storyBox.style.borderColor = '';
+  }
+  if (flashData) {
+    let flashOn = false;
+    storyBox._flashInterval = setInterval(() => {
+      flashOn = !flashOn;
+      if (flashOn) {
+        storyBox.style.background = flashData.color;
+        storyBox.style.borderColor = '#6a3a9a';
+      } else {
+        storyBox.style.background = '';
+        storyBox.style.borderColor = '';
+      }
+    }, flashData.period / 2);
+  }
 }
 
 // 根据屏幕分辨率调整弹窗大小
@@ -2086,6 +2305,14 @@ $('storyDone').onclick = () => {
   // 清空状态
   storyPlaying = null;
   $('storyOverlay').style.display = 'none';
+  // ★ 清除闪烁
+  const sb = $('storyBox');
+  if (sb._flashInterval) {
+    clearInterval(sb._flashInterval);
+    sb._flashInterval = null;
+    sb.style.background = '';
+    sb.style.borderColor = '';
+  }
   // 恢复原模式
   if (storyWasMode !== S.mode) {
     setMode(storyWasMode);
@@ -2127,6 +2354,22 @@ function autoUnlockStories() {
   // 2-2：购买残根3或残根4
   if ((S.lvRoot[3] >= 1 || S.lvRoot[4] >= 1) && !S.storyUnlocked['2-2']) {
     S.storyUnlocked['2-2'] = true;
+  }
+  // 3-1：伤残等级达到 100
+  if (S.disabilityLv >= 100 && !S.storyUnlocked['3-1']) {
+    S.storyUnlocked['3-1'] = true;
+  }
+  // 3-2：伤残等级超过 100
+  if (S.disabilityLv > 100 && !S.storyUnlocked['3-2']) {
+    S.storyUnlocked['3-2'] = true;
+  }
+  // 3-3：首次攻击 51 级及以上怪物 → 用 maxBeaten >= 52 判定
+  if (S.maxBeaten >= 52 && !S.storyUnlocked['3-3']) {
+    S.storyUnlocked['3-3'] = true;
+  }
+  // 3-4：首次击败 51 级及以上怪物 → 用 maxBeaten >= 52 判定
+  if (S.maxBeaten >= 52 && !S.storyUnlocked['3-4']) {
+    S.storyUnlocked['3-4'] = true;
   }
 }
 
@@ -2207,9 +2450,15 @@ $('modeRest').onclick = () => setMode('rest');
 
 // 玩家攻击怪物
 function playerAttack(m) {
+  // ★ 剧情 3-3：首次攻击 51 级及以上怪物
+  if (m.lv >= 51 && !S.storyUnlocked['3-3']) {
+    checkStoryTrigger('3-3');
+  }
+  // 重置怨引引导触发判定
+  S.yuanyinLastProc = false;
   // 最终攻击力 = curAtk（已含伤残削弱）
   // 伤害 = max(攻击-防御, 2) × 火力 × 时间域 × (1+伤残程度加成)
-  let dmg = calcDamage(numFrom(S.curAtk), m.def, S.firepower);
+  let dmg = calcDamage(numFrom(S.curAtk), m.def, S.firepower, true);
   // 独立加成：时间抹除域
   let td = timeDomainMultiplier();
   if (td !== 1) dmg = numMul(dmg, numFrom(td));
@@ -2239,7 +2488,7 @@ function playerAttack(m) {
         S.weaving1 = w1;
         S.weaving2 = w2;
         S.weaving3 = w3;
-        // 属性替代由 recalc() 处理
+        recalc();   // ★ 立即应用
         renderWeavingTab();
       }
     }
@@ -2265,6 +2514,18 @@ function playerAttack(m) {
     if (m.lv > S.maxBeaten) {
       S.maxBeaten = m.lv;
       log(`已击败最高等级更新为 Lv.${S.maxBeaten}。`, 'hl');
+      if (m.lv >= 60 && !S.done) {
+      S.stage = 3;
+      win();
+      }
+    }
+    // ★ 剧情 3-4：首次击败 51 级及以上怪物
+    if (m.lv >= 51 && !S.storyUnlocked['3-4']) {
+      checkStoryTrigger('3-4');
+    }
+    // ★ 成就41：首次击败 51 级怪物
+    if (m.lv >= 51 && !S.ach[41]) {
+      completeAchievement(41);
     }
     if (m.lv >= 10) completeAchievement(12);
     // 萌生7 首次达到 1e7 时可购买（在 render 里控制显示）
@@ -2273,6 +2534,99 @@ function playerAttack(m) {
   }
   return false;
 }
+
+// 怨引攻击
+function yuanyinAttack(m) {
+  // ★ 剧情 3-3：首次攻击 51 级及以上怪物
+  if (m.lv >= 51 && !S.storyUnlocked['3-3']) {
+    checkStoryTrigger('3-3');
+  }
+  // 剧情 3-3 判定尾
+  let dmg = calcDamage(numFrom(S.curAtk), m.def, S.yuanyinFirepower, true);
+  let td = timeDomainMultiplier();
+  if (td !== 1) dmg = numMul(dmg, numFrom(td));
+  if (S.damageBonus > 0) dmg = numMul(dmg, numFrom(1 + S.damageBonus));
+  S.battleDamagePlayer = numAdd(S.battleDamagePlayer, dmg);
+  m.hp = numSub(m.hp, dmg);
+  // 引导邪莲花
+  let proc = false;
+  let lotusTotalDmg = makeNum(0, 0);
+  if (Math.random() < S.yuanyinProc && S.lotuses.length > 0) {
+    proc = true;
+    S.yuanyinLastProc = true;
+    // 先算总伤害
+    for (let l of S.lotuses) {
+      if (l.bloomed) {
+        let lDmg = calcDamage(l.atk, m.def, l.firepower, true);
+        let ltd = timeDomainMultiplier();
+        if (ltd !== 1) lDmg = numMul(lDmg, numFrom(ltd));
+        if (S.damageBonus > 0) lDmg = numMul(lDmg, numFrom(1 + S.damageBonus));
+        lotusTotalDmg = numAdd(lotusTotalDmg, lDmg);
+      }
+    }
+    S.yuanyinProcDmg = lotusTotalDmg;
+    // 再实际攻击
+    for (let l of S.lotuses) {
+      if (l.bloomed && l.active) {
+        if (lotusAttack(l, m)) return true;
+      }
+    }
+  } else {
+    S.yuanyinLastProc = false;
+    S.yuanyinProcDmg = makeNum(0, 0);
+  }
+  // 怨引本身攻击
+  if (numCmp(m.hp, makeNum(0,0)) <= 0) {
+    // 击杀
+    let drop = m.drop;
+    if (S.moneyMultiplier !== 1.0) drop = numMul(drop, numFrom(S.moneyMultiplier));
+    S.money = numAdd(S.money, drop);
+    if (numCmp(S.money, S.maxMoneyHeld) > 0) S.maxMoneyHeld = { m: S.money.m, e: S.money.e };
+    // 输出占比 log
+    let totalDmg = numAdd(S.battleDamagePlayer, S.battleDamageLotus);
+    if (numCmp(totalDmg, makeNum(0,0)) > 0) {
+      let pLog = S.battleDamagePlayer.m > 0 ? Math.log10(S.battleDamagePlayer.m) + S.battleDamagePlayer.e : -Infinity;
+      let lLog = S.battleDamageLotus.m > 0 ? Math.log10(S.battleDamageLotus.m) + S.battleDamageLotus.e : -Infinity;
+      let maxLog = Math.max(pLog, lLog);
+      let pVal = pLog === -Infinity ? 0 : Math.pow(10, pLog - maxLog);
+      let lVal = lLog === -Infinity ? 0 : Math.pow(10, lLog - maxLog);
+      let totalVal = pVal + lVal;
+      let pPct = totalVal > 0 ? (pVal / totalVal) * 100 : 0;
+      let lPct = totalVal > 0 ? (lVal / totalVal) * 100 : 0;
+      log(`本场输出：厄凛娜斯 ${fmt(S.battleDamagePlayer)}（${pPct.toFixed(1)}%），邪莲花 ${fmt(S.battleDamageLotus)}（${lPct.toFixed(1)}%）`);
+    }
+    S.battleDamagePlayer = makeNum(0, 0);
+    S.battleDamageLotus = makeNum(0, 0);
+    log(`怨引击杀 Lv.${m.lv} 怪物，获得 ${fmt(drop)} 凄残币。`, 'hl');
+    if (m.lv > S.maxBeaten) S.maxBeaten = m.lv;
+    // ★ 剧情 3-4：首次击败 51 级及以上怪物
+    if (m.lv >= 51 && !S.storyUnlocked['3-4']) {
+      checkStoryTrigger('3-4');
+    }
+    // ★ 成就41：首次击败 51 级怪物
+    if (m.lv >= 51 && !S.ach[41]) {
+      completeAchievement(41);
+    }
+    if (m.lv >= 10) completeAchievement(12);
+    if (m.lv >= 60 && !S.done) { S.stage = 3; win(); }
+    spawnMonster();
+    return true;
+  }
+  return false;
+}
+
+$('btn-switch-yuanyin').onclick = () => {
+  if (S.normalAttack === '怨引') {
+    S.normalAttack = '棘刺';
+    S.atkTimer = 0;
+    log('切换普通攻击至【棘刺】，攻击间隔已重置。');
+  } else {
+    S.normalAttack = '怨引';
+    S.atkTimer = 0;
+    log('切换普通攻击至【怨引】，攻击间隔已重置。');
+  }
+  renderBattle();
+};
 
 // 邪莲之种：积攒间隔
 function lotusSeedInterval() {
@@ -2333,6 +2687,8 @@ function makeLotus(position) {
     position: position,        // ★ 'front' 或 'back'
     disabilityValue: dLv * 0.10,   // ★ 邪莲花自己的伤残值（用于承伤）
     disabilityValueMax: dLv * 0.10,
+    bloomTimer: 4.0,          // ★ 生长倒计时
+    bloomed: false,           // ★ 是否已长成
   };
 }
 
@@ -2371,7 +2727,7 @@ function releaseLotusSeed(position) {
 
 // 邪莲花攻击
 function lotusAttack(l, m) {
-  let dmg = calcDamage(l.atk, m.def, l.firepower);
+  let dmg = calcDamage(l.atk, m.def, l.firepower, true);
   let td = timeDomainMultiplier();
   if (td !== 1) dmg = numMul(dmg, numFrom(td));
   if (S.damageBonus > 0) dmg = numMul(dmg, numFrom(1 + S.damageBonus));
@@ -2400,8 +2756,20 @@ function lotusAttack(l, m) {
     // 重置
     S.battleDamagePlayer = makeNum(0, 0);
     S.battleDamageLotus = makeNum(0, 0);
+    if (m.lv >= 60 && !S.done) {
+      S.stage = 3;
+      win();
+    }
     log(`邪莲花击杀 Lv.${m.lv} 怪物，获得 ${fmt(drop)} 凄残币。`, 'hl');
     if (m.lv > S.maxBeaten) S.maxBeaten = m.lv;
+    // ★ 剧情 3-4：首次击败 51 级及以上怪物
+    if (m.lv >= 51 && !S.storyUnlocked['3-4']) {
+      checkStoryTrigger('3-4');
+    }
+    // ★ 成就41：首次击败 51 级怪物
+    if (m.lv >= 51 && !S.ach[41]) {
+      completeAchievement(41);
+    }
     if (m.lv >= 10) completeAchievement(12);
     spawnMonster();
     return true;
@@ -2412,7 +2780,7 @@ function lotusAttack(l, m) {
 // 怪物攻击玩家
 function monsterAttack() {
   const m = S.monster;
-  let dmg = calcDamage(m.atk, numFrom(S.curDef), m.firepower);
+  let dmg = calcDamage(m.atk, numFrom(S.curDef), m.firepower, false);
   let td = timeDomainMultiplier();
   if (td !== 1) dmg = numMul(dmg, numFrom(td));
   let dmgVal = dmg.m * Math.pow(10, dmg.e);
@@ -2496,18 +2864,19 @@ function revive() {
 
 // 休息 tick
 function restTick(dt) {
-  // 基础 20% + 快速休息（每级5%）+ 迅速休息（每级25%）
   let rate = 0.20 + S.lv[6] * 0.05 + S.lvRoot[2] * 0.25;
-  // 回血只回到可恢复上限
-  if (S.hp < S.recoverableHp) {
-    S.hp = Math.min(S.recoverableHp, S.hp + S.recoverableHp * rate * dt);
+  // ★ 更邪修的休息：不恢复生命值
+  if (S.lvXie[6] !== 1) {
+    if (S.hp < S.recoverableHp) {
+      S.hp = Math.min(S.recoverableHp, S.hp + S.recoverableHp * rate * dt);
+    }
   }
-  // 伤残值回复：速度为生命恢复的 1/10
+  // 伤残值回复不变
   if (S.disabilityUnlocked) {
     let valueRate = rate * 0.1;
     S.disabilityValue = Math.min(S.curDisabilityValueMax, S.disabilityValue + S.curDisabilityValueMax * valueRate * dt);
   }
-  // 怪物回血
+  // 怪物回血不变
   const m = S.monster;
   if (m) {
     const heal = numMul(m.maxHp, numFrom(rate * dt));
@@ -2565,13 +2934,22 @@ function tick(dt) {
         log(`邪莲花绽放（${seed.position === 'front' ? '前排' : '后排'}）。`, 'hl');
       }
     }
-    // 邪莲花老化
+    // 邪莲花老化 + 生长
     for (let i = S.lotuses.length - 1; i >= 0; i--) {
       let l = S.lotuses[i];
-      l.age += dt;
-      if (l.age >= l.maxAge) {
-        S.lotuses.splice(i, 1);
-        log('邪莲花凋亡。');
+      if (!l.bloomed) {
+        l.bloomTimer -= dt;
+        if (l.bloomTimer <= 0) {
+          l.bloomed = true;
+          l.bloomTimer = 0;
+          log(`邪莲花长大（${l.position === 'front' ? '前排' : '后排'}）。`, 'hl');
+        }
+      } else {
+        l.age += dt;
+        if (l.age >= l.maxAge) {
+          S.lotuses.splice(i, 1);
+          log('邪莲花凋亡。');
+        }
       }
     }
   }
@@ -2592,7 +2970,7 @@ function tick(dt) {
   S.battletimer += dt;
 
   // 计算各单位的先手时长和激活时刻
-  let tP = S.range / m.speed;              // 棘刺先手
+  let tP = (S.normalAttack === '怨引' ? S.yuanyinRange : S.range) / m.speed; // 棘刺或怨引先手
   let tM = 0;                              // 怪物先手
   let tL = 0;                              // 邪莲花先手（取最长的）
   if (S.lotusUnlocked && S.lotuses.length > 0) {
@@ -2610,10 +2988,15 @@ function tick(dt) {
     S.atkTimer = 0;
   }
   if (S.atkActive) {
+    let curInterval = S.normalAttack === '怨引' ? S.yuanyinInterval : S.interval;
     S.atkTimer += dt;
-    while (S.atkTimer >= S.interval) {
-      S.atkTimer -= S.interval;
-      if (playerAttack(m)) return;
+    while (S.atkTimer >= curInterval) {
+      S.atkTimer -= curInterval;
+      if (S.normalAttack === '怨引') {
+        if (yuanyinAttack(m)) return;
+      } else {
+        if (playerAttack(m)) return;
+      }
     }
   }
 
@@ -2639,7 +3022,7 @@ function tick(dt) {
         l.active = true;
         l.atkTimer = 0;
       }
-      if (l.active) {
+      if (l.bloomed && l.active) {
         l.atkTimer += dt;
         while (l.atkTimer >= l.interval) {
           l.atkTimer -= l.interval;
@@ -2687,11 +3070,11 @@ function renderBattle() {
   // 伤残相关行
   if (S.disabilityUnlocked) {
     let lvText;
-    if (S.disabilityLv >= 100) {
-      lvText = `Lv.100/100，EXP∞`;
+    if (S.disabilityLv >= S.disabilityMax) {
+      lvText = `Lv.${S.disabilityLv}/${S.disabilityMax}，EXP∞`;
     } else {
       let need = disabilityExpNeeded(S.disabilityLv + 1);
-      lvText = `Lv.${S.disabilityLv}/100，EXP${fmtNum(S.disabilityExp)}/${need}`;
+      lvText = `Lv.${S.disabilityLv}/${S.disabilityMax}，EXP${fmtNum(S.disabilityExp)}/${need}`;
     }
     $('s-disability-lv').textContent = lvText;
     $('s-disability-value').textContent = `${fmtNum(S.disabilityValue)}/${S.curDisabilityValueMax}`;
@@ -2700,12 +3083,12 @@ function renderBattle() {
     $('s-disability-degree').textContent = `${fmtNum(degree)}→+${bonus}%`;
   }
 
-  // 技能面板
+  // 技能面板,包含棘刺面板
   $('sk-fp').textContent = S.firepower.toFixed(1);
   $('sk-int').textContent = S.interval.toFixed(1) + 's';
   $('sk-range').textContent = S.range.toFixed(1) + 'm';
   if (m) {
-    let d = calcDamage(numFrom(S.curAtk), m.def, S.firepower);
+    let d = calcDamage(numFrom(S.curAtk), m.def, S.firepower, true);
     let td = timeDomainMultiplier();
     if (td !== 1) d = numMul(d, numFrom(td));
     if (S.damageBonus > 0) d = numMul(d, numFrom(1 + S.damageBonus));
@@ -2760,6 +3143,47 @@ function renderBattle() {
     $('disabilityValuePanel').style.display = 'none';
   }
 
+  // 怨引技能卡
+  if (S.yuanyinUnlocked) {
+    $('skill-yuanyin').style.display = 'block';
+    $('yy-fp').textContent = S.yuanyinFirepower.toFixed(1);
+    $('yy-int').textContent = S.yuanyinInterval.toFixed(2) + 's';
+    $('yy-range').textContent = S.yuanyinRange.toFixed(1) + 'm';
+    // ★ 实际伤害
+    if (m) {
+      let d = calcDamage(numFrom(S.curAtk), m.def, S.yuanyinFirepower, true);
+      let td = timeDomainMultiplier();
+      if (td !== 1) d = numMul(d, numFrom(td));
+      if (S.damageBonus > 0) d = numMul(d, numFrom(1 + S.damageBonus));
+      if (d.e < 4) {
+        $('yy-dmg').textContent = fmtNum(d.m * Math.pow(10, d.e));
+      } else {
+        $('yy-dmg').textContent = fmt(d);
+      }
+    }
+    // ★ 引导概率 + 触发状态
+    $('yy-proc').textContent = (S.yuanyinProc * 100).toFixed(0) + '%';
+    if (S.normalAttack === '怨引' && S.yuanyinLastProc) {
+      $('yy-proc-status').textContent = '✔';
+      $('yy-proc-status').style.color = '#6ad58a';
+      // ★ 引导邪莲花总伤害
+      $('yy-proc-dmg').textContent = fmt(S.yuanyinProcDmg);
+      $('yy-proc-dmg').style.color = S.yuanyinLastProc ? '#6ad58a' : '#d5a86a';
+    } else {
+      $('yy-proc-status').textContent = '✖';
+      $('yy-proc-status').style.color = '#d58a8a';
+      // ★ 引导邪莲花总伤害
+      $('yy-proc-dmg').textContent = fmt(S.yuanyinProcDmg);
+      $('yy-proc-dmg').style.color = S.yuanyinLastProc ? '#6ad58a' : '#d5a86a';
+    }
+    $('btn-switch-yuanyin').style.display = 'block';
+    $('btn-switch-yuanyin').textContent = S.normalAttack === '怨引'
+      ? '切换普通攻击至【棘刺】，这会重置普通攻击的攻击间隔。'
+      : '切换普通攻击至【怨引】，这会重置普通攻击的攻击间隔。';
+  } else {
+    $('skill-yuanyin').style.display = 'none';
+  }
+
   // 邪念无伤技能卡
   if (S.xienianUnlocked) {
     $('skill-xienian').style.display = 'block';
@@ -2770,12 +3194,16 @@ function renderBattle() {
       `厄凛娜斯的防御力硬上限为 5，因硬上限而损失的防御力按照每 1 防御力 → ${defRate} 生命值的比例转化为生命值。`;
   }
 
-  // ★ 邪莲之种面板
+  // 邪莲之种技能卡
   if (S.lotusUnlocked) {
     $('skill-lotus').style.display = 'block';
     $('lotus-seed-interval').textContent = lotusSeedInterval();
     $('lotus-seed-max').textContent = lotusSeedMax();
     $('lotus-release-cd').textContent = lotusReleaseCd();
+    $('lotus-max-count').textContent = lotusMax();
+    $('lotus-max-count-2').textContent = lotusMax() + 1;
+    $('lotus-range-desc').textContent = lotusRange().toFixed(2);
+    $('lotus-interval-desc').textContent = lotusInterval().toFixed(2);
     // ★ 充能 CD
     let chargeCd = lotusSeedInterval() - S.lotusSeedTimer;
     if (S.lotusSeeds >= lotusSeedMax()) chargeCd = lotusSeedInterval();
@@ -2785,8 +3213,8 @@ function renderBattle() {
     $('lotus-count').textContent = `${S.lotuses.length} / ${lotusMax()}`;
     // ★ 邪莲花属性（取第一个，或者前排）
     let sampleLotus = S.lotuses[0];
-    $('lotus-range').textContent = sampleLotus ? sampleLotus.range.toFixed(1) + 'm' : lotusRange().toFixed(1) + 'm';
-    $('lotus-interval').textContent = sampleLotus ? sampleLotus.interval.toFixed(1) + 's' : lotusInterval().toFixed(1) + 's';
+    $('lotus-range').textContent = sampleLotus ? sampleLotus.range.toFixed(2) + 'm' : lotusRange().toFixed(1) + 'm';
+    $('lotus-interval').textContent = sampleLotus ? sampleLotus.interval.toFixed(2) + 's' : lotusInterval().toFixed(1) + 's';
     if (sampleLotus) {
       $('lotus-atk').textContent = fmt(sampleLotus.atk);
       $('lotus-def').textContent = fmt(sampleLotus.def);
@@ -2805,10 +3233,20 @@ function renderBattle() {
     } else {
       let parts = [];
       for (let i = 0; i < S.lotuses.length; i++) {
-        let remain = S.lotuses[i].maxAge - S.lotuses[i].age;
-        if (remain < 0) remain = 0;
-        let tag = S.lotuses[i].position === 'front' ? '前' : '后';
-        parts.push(`[${tag}]#${i+1} ${remain.toFixed(1)}s`);
+        let l = S.lotuses[i];
+        let tag = l.position === 'front' ? '前' : '后';
+        if (!l.bloomed) {
+          // 生长中
+          parts.push(`[${tag}]#${i+1} ⏱️${Math.max(0, l.bloomTimer).toFixed(1)}s`);
+        } else {
+          // 已长成
+          let remain = l.maxAge - l.age;
+          if (remain < 0) remain = 0;
+          // ★ 距离下一次攻击的倒计时
+          let nextAtk = l.interval - l.atkTimer;
+          if (nextAtk < 0) nextAtk = 0;
+          parts.push(`[${tag}]#${i+1} 🪷${remain.toFixed(1)}s🔁${Math.round(nextAtk * 1000)}ms`);
+        }
       }
       lotusInfo = parts.join(' ｜ ');
     }
@@ -2824,6 +3262,20 @@ function renderBattle() {
       $('lotus-front-hp-row').style.display = 'none';
       $('lotus-front-dv-row').style.display = 'none';
     }
+    // ★ 邪莲花单次伤害
+    if (m && sampleLotus) {
+      let ld = calcDamage(sampleLotus.atk, m.def, sampleLotus.firepower, true);
+      let ltd = timeDomainMultiplier();
+      if (ltd !== 1) ld = numMul(ld, numFrom(ltd));
+      if (S.damageBonus > 0) ld = numMul(ld, numFrom(1 + S.damageBonus));
+      if (ld.e < 4) {
+        $('lotus-dmg-per-hit').textContent = fmtNum(ld.m * Math.pow(10, ld.e));
+      } else {
+        $('lotus-dmg-per-hit').textContent = fmt(ld);
+      }
+    } else {
+      $('lotus-dmg-per-hit').textContent = '0';
+    }
     // ★ 按钮状态
     let canRelease = S.lotusSeeds > 0 && S.lotusReleaseCd <= 0 && S.disabilityValue >= 15 && !S.lotusPlanting;
     $('btn-release-lotus').disabled = !canRelease;
@@ -2838,7 +3290,6 @@ function renderBattle() {
     }
   }
 
-  // ★ 本场输出占比
   // ★ 本场输出占比
   if (S.lotusUnlocked) {
     let totalDmg = numAdd(S.battleDamagePlayer, S.battleDamageLotus);
@@ -2871,27 +3322,30 @@ function renderBattle() {
 // 阶段横条
 function renderGoal() {
   // 终局条件（固定）
-  let finalGoal = `终局：获得 <b>100</b> 级伤残等级`;
+  let finalGoal = `终局：击败 <b>60</b> 级怪物`;
   // 当前阶段
   let stageText = '';
   if (S.stage === 1) {
     if (numCmp(S.money, numFrom(1e7)) >= 0) {
-      // 第一阶段完成，提示去升级
       stageText = `<span class="done">第一阶段 · 萌生：完成</span>，<span style="color:#ff6ad5">看看升级界面吧</span>`;
     } else {
       stageText = `第一阶段 · 萌生：持有 <b>10^7</b> 凄残币`;
     }
-  } else {
-    // 第二阶段
+  } else if (S.stage === 2) {
     if (S.disabilityLv >= 100) {
       stageText = `<span class="done">第二阶段 · 残根：完成</span>`;
     } else {
       stageText = `第二阶段 · 残根：获得 <b>100</b> 级伤残等级（当前 ${S.disabilityLv}/100）`;
     }
+  } else if (S.stage === 3) {
+    if (S.maxBeaten >= 60) {
+      stageText = `<span class="done">第三阶段 · 邪茎：完成</span>`;
+    } else {
+      stageText = `第三阶段 · 邪茎：击败 <b>60</b> 级怪物（当前 ${S.maxBeaten}/60）`;
+    }
   }
-  // 合并成一行
   $('goal1').innerHTML = finalGoal + ' &nbsp;|&nbsp; ' + stageText;
-  $('goal2').innerHTML = '';   // 第二行清空
+  $('goal2').innerHTML = '';
 }
 
 // 升级 TAB
@@ -3061,6 +3515,54 @@ function renderUpgradeTab() {
     if ($('up1b')) $('up1b').querySelector('.desc').textContent = d1;
     if ($('up2b')) $('up2b').querySelector('.desc').textContent = d2;
   }
+
+  // ★ 邪茎（第三阶段解锁）
+  if (S.stage >= 3) {
+    if ($('panel-xie')) $('panel-xie').style.display = 'block';
+    for (let i = 1; i <= 6; i++) {
+      if ($('ux' + i)) $('ux' + i).style.display = 'block';
+      let c;
+      if (i === 1) c = costX1(S.lvXie[1]);
+      else if (i === 2) c = costX2(S.lvXie[2]);
+      else if (i === 3) c = costX3(S.lvXie[3]);
+      else if (i === 4) c = costX4(S.lvXie[4]);
+      else if (i === 5) c = costX5(S.lvXie[5]);
+      else if (i === 6) c = null;   // 抹除者送的
+      if ($('cx' + i)) {
+        if (i === 6) {
+          $('cx' + i).textContent = '抹除者送你的';
+        } else {
+          $('cx' + i).textContent = fmt(c);
+        }
+      }
+      if ($('lx' + i)) $('lx' + i).textContent = 'Lv.' + S.lvXie[i];
+      let canBuy = (i !== 6) && numCmp(S.money, c) >= 0;
+      if (i === 1 && S.lvXie[1] >= 4) canBuy = false;
+      if (i === 2 && S.lvXie[2] >= 8) canBuy = false;
+      if (i === 3 && S.lvXie[3] >= 15) canBuy = false;
+      if (i === 4 && S.lvXie[4] >= 4) canBuy = false;
+      if (i === 6) {
+        if ($('cx6')) $('cx6').textContent = '抹除者送你的';
+        if ($('lx6')) $('lx6').textContent = S.lvXie[6] === 1 ? '已激活' : '未激活';
+        if ($('ux6')) {
+          if (S.maxBeaten >= 50) {
+            $('ux6').style.display = 'block';
+            $('ux6').disabled = false;
+          } else {
+            $('ux6').style.display = 'none';
+          }
+        }
+        continue;
+      }
+      if ($('ux' + i)) $('ux' + i).disabled = !canBuy;
+    }
+    if ($('ux5')) {
+      if (S.ach[41]) $('ux5').style.display = 'block';
+      else $('ux5').style.display = 'none';
+    }
+  } else {
+    if ($('panel-xie')) $('panel-xie').style.display = 'none';
+  }
 }
 
 // 成就 TAB
@@ -3077,6 +3579,10 @@ function renderAchievementTab() {
     { id: 24, name: '等等，伤残秘境哪里来的织者？', cond: '解锁全部织线 · 萌生（萌生之织线 Lv.3）。', reward: '前2个织线最终数量 ×1.2。' },
     { id: 31, name: '万血战士', cond: '厄凛娜斯的生命值达到 10000（包括不可恢复的部分）。', reward: '解锁技能【邪莲之种】，并解锁很多关于它的升级。' },
     { id: 32, name: '火力压制', cond: '满级升级 · 残根9。', reward: '邪莲之种的存储上限和存在上限 +1。' },
+    { id: 33, name: '满级，伤残大佬', cond: '伤残等级到达 100。', reward: '解锁伤残技【怨引】。' },
+    { id: 34, name: '打破满分', cond: '伤残等级超过 100。', reward: '伤残等级升级所需经验公式改为 max((伤残等级-140)^2, 1)。' },
+    { id: 41, name: '怎么这么硬', cond: '首次击败 51 级怪物。', reward: '解锁穿透类型的技能。' },
+
   ];
   // 按 id 排序：11,12,13,14,21,22...
   ALL_ACH.sort((a,b) => a.id - b.id);
@@ -3274,6 +3780,78 @@ function buyRoot(idx) {
   if (S.weavingUnlocked) renderWeavingTab(); // 重新渲染织线
 }
 
+// 购买邪茎
+function buyXie(idx) {
+  const n = S.lvXie[idx];
+  let cost;
+  if (idx === 1) cost = costX1(n);
+  else if (idx === 2) cost = costX2(n);
+  else if (idx === 3) cost = costX3(n);
+  else if (idx === 4) cost = costX4(n);
+  else if (idx === 5) cost = costX5(n);
+  // idx === 6 不需要 cost，抹除者送的
+
+  if (idx !== 6 && numCmp(S.money, cost) < 0) return;
+  if (idx === 1 && S.lvXie[1] >= 4) return;
+  if (idx === 2 && S.lvXie[2] >= 8) return;
+  if (idx === 3 && S.lvXie[3] >= 15) return;
+  if (idx === 4 && S.lvXie[4] >= 4) return;
+
+  if (idx !== 6) S.money = numSub(S.money, cost);
+  if (idx === 6) {
+    // 切换 0/1
+    S.lvXie[6] = S.lvXie[6] === 0 ? 1 : 0;
+    if (S.lvXie[6] === 1) {
+      log('更邪修的休息：已激活。休息将不会恢复生命值。', 'hl');
+    } else {
+      log('更邪修的休息：已关闭。休息恢复正常。', 'hl');
+    }
+  } else {
+    S.lvXie[idx]++;
+  }
+
+  if (idx === 1) {
+    S.disabilityLv += 10;
+    S.disabilityMax += 10;
+    log(`伤残突破 Lv.${S.lvXie[1]}：伤残等级 +10。`);
+    // ★ 成就33 检查
+    if (S.disabilityLv >= 100 && !S.ach[33]) {
+      completeAchievement(33);
+    }
+    // ★ 成就34 检查
+    if (S.disabilityLv > 100 && !S.ach[34]) {
+      completeAchievement(34);
+    }
+    // ★ 阶段推进
+    if (S.stage < 3 && S.disabilityLv >= 100) {
+      S.stage = 3;
+      log('第二阶段 · 残根：完成。进入第三阶段 · 邪茎。', 'hl');
+    }
+  }
+  if (idx === 2) {
+    S.yuanyinInterval = Math.max(0.5, S.yuanyinInterval - 0.1);
+    log(`怨引·循环 Lv.${S.lvXie[2]}：怨引攻击间隔 -0.1s。`);
+  }
+  if (idx === 3) {
+    S.yuanyinRange += 1;
+    log(`怨引·神射 Lv.${S.lvXie[3]}：怨引攻击范围 +1m。`);
+  }
+  if (idx === 4) {
+    S.yuanyinProc += 0.05;
+    log(`怨引·滋养 Lv.${S.lvXie[4]}：怨引引导概率 +5%。`);
+  }
+  if (idx === 5) {
+    log(`会心穿透 Lv.${S.lvXie[5]}：怪物防御力 -1。`);
+  }
+  if (idx === 6) {
+    // 已在上面处理
+  }
+
+  recalc();
+  renderUpgradeTab();
+  renderBattle();
+}
+
 // 绑定萌生升级（单栏版）
 $('up1').onclick = () => buy(1);
 $('up2').onclick = () => buy(2);
@@ -3301,6 +3879,13 @@ $('ur7').onclick = () => buyRoot(7);
 $('ur8').onclick = () => buyRoot(8);
 $('ur9').onclick = () => buyRoot(9);
 $('ur10').onclick = () => buyRoot(10);
+// 邪茎
+$('ux1').onclick = () => buyXie(1);
+$('ux2').onclick = () => buyXie(2);
+$('ux3').onclick = () => buyXie(3);
+$('ux4').onclick = () => buyXie(4);
+$('ux5').onclick = () => buyXie(5);
+$('ux6').onclick = () => buyXie(6);
 
 // ============================================================
 // 第十五部分：怪物等级选择
@@ -3346,6 +3931,11 @@ $('lvInput').onchange = () => { clampLvInput(); };
 function serialize() {
   return {
     v: 6,
+
+    // ============================================================
+    // 1. 战斗
+    // ============================================================
+    // 厄凛娜斯基础属性
     rawAtk: S.rawAtk,
     rawDef: S.rawDef,
     baseHp: S.baseHp,
@@ -3353,55 +3943,29 @@ function serialize() {
     def: S.def,
     maxHp: S.maxHp,
     hp: S.hp,
+    // 厄凛娜斯技能
     interval: S.interval,
     firepower: S.firepower,
     range: S.range,
     atkTimer: S.atkTimer,
-    monsterLv: S.monsterLv,
-    maxBeaten: S.maxBeaten,
-    dropMul: S.dropMul,
-    money: { m: S.money.m, e: S.money.e },
-    lv: { ...S.lv },
-    lvRoot: { ...S.lvRoot },
-    done: S.done,
-    stage: S.stage,
-    t: S.t,
-    dead: S.dead,
-    reviveTimer: S.reviveTimer,
-    mode: S.mode,
-    ach: { ...S.ach },
-    moneyMultiplier: S.moneyMultiplier,
     xienianUnlocked: S.xienianUnlocked,
     atkToHpRate: S.atkToHpRate,
     defToHpRate: S.defToHpRate,
-    disabilityUnlocked: S.disabilityUnlocked,
-    disabilityLv: S.disabilityLv,
-    disabilityExp: S.disabilityExp,
-    disabilityValue: S.disabilityValue,
-    monster: S.monster ? {
-      lv: S.monster.lv,
-      atk: { m: S.monster.atk.m, e: S.monster.atk.e },
-      def: { m: S.monster.def.m, e: S.monster.def.e },
-      maxHp: { m: S.monster.maxHp.m, e: S.monster.maxHp.e },
-      hp: { m: S.monster.hp.m, e: S.monster.hp.e },
-      drop: { m: S.monster.drop.m, e: S.monster.drop.e },
-      speed: S.monster.speed,
-      interval: S.monster.interval,
-      firepower: S.monster.firepower,
-      atkTimer: S.monster.atkTimer
-    } : null,
-    storyUnlocked: { ...S.storyUnlocked },
-    maxMoneyHeld: { m: S.maxMoneyHeld.m, e: S.maxMoneyHeld.e },
-    weavingUnlocked: S.weavingUnlocked,
-    weavingLv: S.weavingLv,
-    weaving1: S.weaving1,
-    weaving2: S.weaving2,
-    weaving3: S.weaving3,
-    autoSaveInterval: S.autoSaveInterval,
+    yuanyinUnlocked: S.yuanyinUnlocked,
+    normalAttack: S.normalAttack,
+    yuanyinInterval: S.yuanyinInterval,
+    yuanyinRange: S.yuanyinRange,
+    yuanyinFirepower: S.yuanyinFirepower,
+    yuanyinProc: S.yuanyinProc,
+    yuanyinLastProc: S.yuanyinLastProc,
+    yuanyinProcDmg: { m: S.yuanyinProcDmg.m, e: S.yuanyinProcDmg.e },
     lotusUnlocked: S.lotusUnlocked,
     lotusSeeds: S.lotusSeeds,
     lotusSeedTimer: S.lotusSeedTimer,
     lotusReleaseCd: S.lotusReleaseCd,
+    lotusPlanting: S.lotusPlanting,
+    lotusPlantTimer: S.lotusPlantTimer,
+    lotusPlantPosition: S.lotusPlantPosition,
     lotuses: S.lotuses.map(l => ({
       atk: { m: l.atk.m, e: l.atk.e },
       def: { m: l.def.m, e: l.def.e },
@@ -3420,19 +3984,94 @@ function serialize() {
       disabilityValueMax: l.disabilityValueMax,
       active: l.active,
       activateAt: l.activateAt,
+      bloomTimer: l.bloomTimer,
+      bloomed: l.bloomed,
     })),
-    battleDamagePlayer: { m: S.battleDamagePlayer.m, e: S.battleDamagePlayer.e },
-    battleDamageLotus: { m: S.battleDamageLotus.m, e: S.battleDamageLotus.e },
+    // 模式
+    mode: S.mode,
     battletimer: S.battletimer,
     atkActive: S.atkActive,
     atkActivateAt: S.atkActivateAt,
     monsterActive: S.monsterActive,
     monsterActivateAt: S.monsterActivateAt,
+    // 怪物属性
+    monsterLv: S.monsterLv,
+    maxBeaten: S.maxBeaten,
+    dropMul: S.dropMul,
+    monster: S.monster ? {
+      lv: S.monster.lv,
+      atk: { m: S.monster.atk.m, e: S.monster.atk.e },
+      def: { m: S.monster.def.m, e: S.monster.def.e },
+      maxHp: { m: S.monster.maxHp.m, e: S.monster.maxHp.e },
+      hp: { m: S.monster.hp.m, e: S.monster.hp.e },
+      drop: { m: S.monster.drop.m, e: S.monster.drop.e },
+      speed: S.monster.speed,
+      interval: S.monster.interval,
+      firepower: S.monster.firepower,
+      atkTimer: S.monster.atkTimer
+    } : null,
+    // 输出占比
+    battleDamagePlayer: { m: S.battleDamagePlayer.m, e: S.battleDamagePlayer.e },
+    battleDamageLotus: { m: S.battleDamageLotus.m, e: S.battleDamageLotus.e },
+    // 战斗日志
+    t: S.t,
+    dead: S.dead,
+    reviveTimer: S.reviveTimer,
+
+    // ============================================================
+    // 2. 升级
+    // ============================================================
+    // 萌生
+    lv: { ...S.lv },
+    money: { m: S.money.m, e: S.money.e },
+    moneyMultiplier: S.moneyMultiplier,
+    maxMoneyHeld: { m: S.maxMoneyHeld.m, e: S.maxMoneyHeld.e },
+    // 残根
+    lvRoot: { ...S.lvRoot },
+    // 邪茎
+    lvXie: { ...S.lvXie },
+    disabilityMax: S.disabilityMax,
+    expFormulaChanged: S.expFormulaChanged,
+
+    // ============================================================
+    // 3. 织线
+    // ============================================================
+    weavingUnlocked: S.weavingUnlocked,
+    weavingLv: S.weavingLv,
+    weaving1: S.weaving1,
+    weaving2: S.weaving2,
+    weaving3: S.weaving3,
+
+    // ============================================================
+    // 4. 伤残秘境
+    // ============================================================
+    disabilityUnlocked: S.disabilityUnlocked,
+    disabilityLv: S.disabilityLv,
+    disabilityExp: S.disabilityExp,
+    disabilityValue: S.disabilityValue,
+
+    // ============================================================
+    // 5. 成就
+    // ============================================================
+    ach: { ...S.ach },
+
+    // ============================================================
+    // 其它（进度、阶段、剧情、自动存档）
+    // ============================================================
+    stage: S.stage,
+    done: S.done,
+    storyUnlocked: { ...S.storyUnlocked },
+    autoSaveInterval: S.autoSaveInterval,
   };
 }
 
 function deserialize(data) {
   if (!data) throw new Error('存档为空');
+
+  // ============================================================
+  // 1. 战斗
+  // ============================================================
+  // 厄凛娜斯基础属性
   S.rawAtk = data.rawAtk !== undefined ? data.rawAtk : 15;
   S.rawDef = data.rawDef !== undefined ? data.rawDef : 2;
   S.baseHp = data.baseHp !== undefined ? data.baseHp : 100;
@@ -3440,96 +4079,61 @@ function deserialize(data) {
   S.def = data.def || S.rawDef;
   S.maxHp = data.maxHp || 100;
   S.hp = data.hp || 100;
+  // 厄凛娜斯技能
   S.interval = data.interval || 1.0;
   S.firepower = data.firepower || 1.0;
   S.range = data.range || 2.0;
   S.atkTimer = data.atkTimer || 0;
-  S.monsterLv = data.monsterLv || 1;
-  S.maxBeaten = data.maxBeaten || 0;
-  S.dropMul = data.dropMul || 1.2;
+  S.xienianUnlocked = data.xienianUnlocked || false;
+  S.atkToHpRate = data.atkToHpRate !== undefined ? data.atkToHpRate : 12;
+  S.defToHpRate = data.defToHpRate !== undefined ? data.defToHpRate : 15;
+  S.yuanyinUnlocked = data.yuanyinUnlocked || false;
+  S.normalAttack = data.normalAttack || '棘刺';
+  S.yuanyinInterval = data.yuanyinInterval !== undefined ? data.yuanyinInterval : 1.6;
+  S.yuanyinRange = data.yuanyinRange !== undefined ? data.yuanyinRange : 5.0;
+  S.yuanyinFirepower = data.yuanyinFirepower !== undefined ? data.yuanyinFirepower : 0.4;
+  S.yuanyinProc = data.yuanyinProc !== undefined ? data.yuanyinProc : 0.2;
+  S.yuanyinLastProc = data.yuanyinLastProc || false;
+  S.yuanyinProcDmg = data.yuanyinProcDmg ? { m: data.yuanyinProcDmg.m, e: data.yuanyinProcDmg.e } : makeNum(0, 0);
+  S.lotusUnlocked = data.lotusUnlocked || false;
+  S.lotusSeeds = data.lotusSeeds || 0;
+  S.lotusSeedTimer = data.lotusSeedTimer || 0;
+  S.lotusReleaseCd = data.lotusReleaseCd || 0;
+  S.lotusPlanting = data.lotusPlanting || false;
+  S.lotusPlantTimer = data.lotusPlantTimer || 0;
+  S.lotusPlantPosition = data.lotusPlantPosition || 'back';
+  S.lotuses = (data.lotuses || []).map(l => ({
+    atk: l.atk ? { m: l.atk.m, e: l.atk.e } : makeNum(0, 0),
+    def: l.def ? { m: l.def.m, e: l.def.e } : makeNum(0, 0),
+    maxHp: l.maxHp ? { m: l.maxHp.m, e: l.maxHp.e } : makeNum(0, 0),
+    hp: l.hp ? { m: l.hp.m, e: l.hp.e } : makeNum(0, 0),
+    disabilityLv: l.disabilityLv || 0,
+    range: l.range || 2,
+    interval: l.interval || 1.4,
+    firepower: l.firepower || 0.5,
+    atkTimer: l.atkTimer || 0,
+    age: l.age || 0,
+    maxAge: l.maxAge || 30,
+    hasAttacked: l.hasAttacked !== undefined ? l.hasAttacked : false,
+    position: l.position || 'back',
+    disabilityValue: l.disabilityValue !== undefined ? l.disabilityValue : (l.disabilityLv || 0) * 0.10,
+    disabilityValueMax: l.disabilityValueMax !== undefined ? l.disabilityValueMax : (l.disabilityLv || 0) * 0.10,
+    active: l.active !== undefined ? l.active : false,
+    activateAt: l.activateAt !== undefined ? l.activateAt : 0,
+    bloomTimer: l.bloomTimer !== undefined ? l.bloomTimer : 0,
+    bloomed: l.bloomed !== undefined ? l.bloomed : true,
+  }));
+  // 模式
+  S.mode = data.mode || 'rest';
   S.battletimer = data.battletimer || 0;
   S.atkActive = data.atkActive || false;
   S.atkActivateAt = data.atkActivateAt || 0;
   S.monsterActive = data.monsterActive || false;
   S.monsterActivateAt = data.monsterActivateAt || 0;
-  S.money = data.money ? { m: data.money.m, e: data.money.e } : makeNum(0,0);
-  S.lv = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, ...(data.lv || {}) };
-  S.lvRoot = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, ...(data.lvRoot || {}) };
-  S.done = data.done || false;
-  S.stage = data.stage || 1;
-  S.t = data.t || 0;
-  S.dead = data.dead || false;
-  S.reviveTimer = data.reviveTimer || 0;
-  S.mode = data.mode || 'rest';
-  S.ach = { 11:false, 12:false, 13:false, 14:false, 21:false, 22:false, 23:false, 24:false, 31:false, 32:false, ...(data.ach || {}) };
-  S.moneyMultiplier = data.moneyMultiplier !== undefined ? data.moneyMultiplier : 1.0;
-  S.xienianUnlocked = data.xienianUnlocked || false;
-  S.atkToHpRate = data.atkToHpRate !== undefined ? data.atkToHpRate : 12;
-  S.defToHpRate = data.defToHpRate !== undefined ? data.defToHpRate : 15;
-  S.disabilityUnlocked = data.disabilityUnlocked || false;
-  S.disabilityLv = data.disabilityLv || 0;
-  S.disabilityExp = data.disabilityExp || 0;
-  S.disabilityValue = data.disabilityValue || 0;
-  S.maxMoneyHeld = data.maxMoneyHeld ? { m: data.maxMoneyHeld.m, e: data.maxMoneyHeld.e } : makeNum(0, 0);
-  S.weavingUnlocked = data.weavingUnlocked || false;
-  S.weavingLv = data.weavingLv || 0;
-  S.weaving1 = data.weaving1 || 0;
-  S.weaving2 = data.weaving2 || 0;
-  S.weaving3 = data.weaving3 || 0;
-  S.lotusUnlocked = data.lotusUnlocked || false;
-  S.lotusSeeds = data.lotusSeeds || 0;
-  S.lotusSeedTimer = data.lotusSeedTimer || 0;
-  S.lotusReleaseCd = data.lotusReleaseCd || 0;
-  S.lotuses = (data.lotuses || []).map(l => ({
-    atk: { m: l.atk.m, e: l.atk.e },
-    def: { m: l.def.m, e: l.def.e },
-    maxHp: { m: l.maxHp.m, e: l.maxHp.e },
-    hp: { m: l.hp.m, e: l.hp.e },
-    disabilityLv: l.disabilityLv,
-    range: l.range,
-    interval: l.interval,
-    firepower: l.firepower,
-    atkTimer: l.atkTimer,
-    age: l.age,
-    maxAge: l.maxAge,
-    hasAttacked: l.hasAttacked !== undefined ? l.hasAttacked : false,
-    position: l.position || 'back',
-    disabilityValue: l.disabilityValue !== undefined ? l.disabilityValue : l.disabilityLv * 0.10,
-    disabilityValueMax: l.disabilityValueMax !== undefined ? l.disabilityValueMax : l.disabilityLv * 0.10,
-    active: l.active !== undefined ? l.active : false,
-    activateAt: l.activateAt !== undefined ? l.activateAt : 0,
-  }));
-  // 邪莲之种
-  if (S.lotusUnlocked) {
-    $('skill-lotus').style.display = 'block';
-  }
-  // 伤害统计
-  S.battleDamagePlayer = data.battleDamagePlayer ? { m: data.battleDamagePlayer.m, e: data.battleDamagePlayer.e } : makeNum(0, 0);
-  S.battleDamageLotus = data.battleDamageLotus ? { m: data.battleDamageLotus.m, e: data.battleDamageLotus.e } : makeNum(0, 0);
-  // 织线
-  if (S.weavingUnlocked) {
-    $('tabbtn-weaving').classList.remove('hidden');
-  }
-  // 成就23
-  if (S.ach[23]) {
-    $('ur5').style.display = 'block';
-  }
-  // 存档版本验证
-  if (!data || (data.v !== 1 && data.v !== 2 && data.v !== 3 && data.v !== 4 && data.v !== 5 && data.v !== 6)) {
-    throw new Error('存档版本不匹配');
-  }
-  // ★ 剧情解锁：优先用存档里的，没有就空对象（不自动从 localStorage 继承）
-  S.storyUnlocked = data.storyUnlocked || {};
-  // ★ 导入时判定：条件已满足但剧情未解锁，自动解锁（不弹窗）
-  autoUnlockStories();
-  // 自动存档时间
-  S.autoSaveInterval = data.autoSaveInterval !== undefined ? data.autoSaveInterval : 30;
-  S.autoSaveTimer = 0;
-  // 更新下拉框
-  if ($('autosave-interval')) {
-    $('autosave-interval').value = String(S.autoSaveInterval);
-  }
-
+  // 怪物属性
+  S.monsterLv = data.monsterLv || 1;
+  S.maxBeaten = data.maxBeaten || 0;
+  S.dropMul = data.dropMul || 1.2;
   if (data.monster) {
     S.monster = {
       lv: data.monster.lv,
@@ -3546,46 +4150,107 @@ function deserialize(data) {
   } else {
     spawnMonster();
   }
+  // 输出占比
+  S.battleDamagePlayer = data.battleDamagePlayer ? { m: data.battleDamagePlayer.m, e: data.battleDamagePlayer.e } : makeNum(0, 0);
+  S.battleDamageLotus = data.battleDamageLotus ? { m: data.battleDamageLotus.m, e: data.battleDamageLotus.e } : makeNum(0, 0);
+  // 战斗日志
+  S.t = data.t || 0;
+  S.dead = data.dead || false;
+  S.reviveTimer = data.reviveTimer || 0;
+
+  // ============================================================
+  // 2. 升级
+  // ============================================================
+  // 萌生
+  S.lv = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, ...(data.lv || {}) };
+  S.money = data.money ? { m: data.money.m, e: data.money.e } : makeNum(0,0);
+  S.moneyMultiplier = data.moneyMultiplier !== undefined ? data.moneyMultiplier : 1.0;
+  S.maxMoneyHeld = data.maxMoneyHeld ? { m: data.maxMoneyHeld.m, e: data.maxMoneyHeld.e } : makeNum(0, 0);
+  // 残根
+  S.lvRoot = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, ...(data.lvRoot || {}) };
+  // 邪茎
+  S.lvXie = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, ...(data.lvXie || {}) };
+  S.disabilityMax = data.disabilityMax !== undefined ? data.disabilityMax : 100;
+  S.expFormulaChanged = data.expFormulaChanged || false;
+
+  // ============================================================
+  // 3. 织线
+  // ============================================================
+  S.weavingUnlocked = data.weavingUnlocked || false;
+  S.weavingLv = data.weavingLv || 0;
+  S.weaving1 = data.weaving1 || 0;
+  S.weaving2 = data.weaving2 || 0;
+  S.weaving3 = data.weaving3 || 0;
+
+  // ============================================================
+  // 4. 伤残秘境
+  // ============================================================
+  S.disabilityUnlocked = data.disabilityUnlocked || false;
+  S.disabilityLv = data.disabilityLv || 0;
+  S.disabilityExp = data.disabilityExp || 0;
+  S.disabilityValue = data.disabilityValue || 0;
+
+  // ============================================================
+  // 5. 成就
+  // ============================================================
+  S.ach = { 
+    11:false, 12:false, 13:false, 14:false, 
+    21:false, 22:false, 23:false, 24:false, 
+    31:false, 32:false, 33:false, 34:false, 
+    41:false, 
+    ...(data.ach || {}) 
+  };
+
+  // ============================================================
+  // 其它（进度、阶段、剧情、自动存档）
+  // ============================================================
+  S.stage = data.stage || 1;
+  S.done = data.done || false;
+  S.storyUnlocked = data.storyUnlocked || {};
+  autoUnlockStories();
+  S.autoSaveInterval = data.autoSaveInterval !== undefined ? data.autoSaveInterval : 30;
+  S.autoSaveTimer = 0;
+  if ($('autosave-interval')) {
+    $('autosave-interval').value = String(S.autoSaveInterval);
+  }
+
+  // ============================================================
+  // DOM 渲染（保持原样）
+  // ============================================================
+  if (S.lotusUnlocked && $('skill-lotus')) $('skill-lotus').style.display = 'block';
+  if (S.weavingUnlocked && $('tabbtn-weaving')) $('tabbtn-weaving').classList.remove('hidden');
+  if (S.ach[23] && $('ur5')) $('ur5').style.display = 'block';
+  if (S.stage >= 3 && $('panel-xie')) $('panel-xie').style.display = 'block';
+  if (!data || (data.v !== 1 && data.v !== 2 && data.v !== 3 && data.v !== 4 && data.v !== 5 && data.v !== 6)) {
+    throw new Error('存档版本不匹配');
+  }
 
   // ★ 导入存档后强制切休息
   S.mode = 'rest';
-  $('modeRest').classList.add('active');
-  $('modeFight').classList.remove('active');
-
-  // 伤残秘境 TAB 按钮
-  if (S.disabilityUnlocked) {
-    $('tabbtn-disability').classList.remove('hidden');
-    $('row-disability-lv').style.display = 'flex';
-    $('row-disability-value').style.display = 'flex';
-    $('row-disability-degree').style.display = 'flex';
-    $('upgrade-single').style.display = 'none';
-    $('upgrade-double').style.display = 'flex';
-    $('ur1').style.display = 'block';
-    $('ur2').style.display = 'block';
-  }
-  if (S.disabilityUnlocked) {
-    $('disabilityValuePanel').style.display = 'block';
-  }
-  if (S.ach[14]) {
-    $('ach-14').style.display = 'block';
-    $('ach-21').style.display = 'block';
-    $('ach-22').style.display = 'block';
-  }
-  // ★ 残根3/4 显示（成就22 解锁）
+  if ($('modeRest')) $('modeRest').classList.add('active');
+  if ($('modeFight')) $('modeFight').classList.remove('active');
+  if ($('tabbtn-disability')) $('tabbtn-disability').classList.remove('hidden');
+  if ($('row-disability-lv')) $('row-disability-lv').style.display = 'flex';
+  if ($('row-disability-value')) $('row-disability-value').style.display = 'flex';
+  if ($('row-disability-degree')) $('row-disability-degree').style.display = 'flex';
+  if ($('upgrade-single')) $('upgrade-single').style.display = 'none';
+  if ($('upgrade-double')) $('upgrade-double').style.display = 'flex';
+  if ($('ur1')) $('ur1').style.display = 'block';
+  if ($('ur2')) $('ur2').style.display = 'block';
+  if ($('disabilityValuePanel')) $('disabilityValuePanel').style.display = 'block';
+  if ($('ach-14')) $('ach-14').style.display = 'block';
+  if ($('ach-21')) $('ach-21').style.display = 'block';
+  if ($('ach-22')) $('ach-22').style.display = 'block';
   if (S.ach[22]) {
     if ($('ur3')) $('ur3').style.display = 'block';
     if ($('ur4')) $('ur4').style.display = 'block';
   }
-  if (S.xienianUnlocked) $('skill-xienian').style.display = 'block';
-
-  // 遮罩（默认放在recalc前最后一项）
-  // ★ 导入后清除死亡/通关遮罩（强制休息，不会死）
-  $('reviveMask').style.display = 'none';
+  if (S.xienianUnlocked && $('skill-xienian')) $('skill-xienian').style.display = 'block';
+  if ($('reviveMask')) $('reviveMask').style.display = 'none';
   S.dead = false;
   S.reviveTimer = 0;
-  // 通关遮罩保留（如果已通关，还是显示）
-  if (S.done) $('end').style.display = 'flex';
-  else $('end').style.display = 'none';
+  if (S.done && $('end')) $('end').style.display = 'flex';
+  else if ($('end')) $('end').style.display = 'none';
 
   recalc();
   renderAchievementTab();
@@ -3657,16 +4322,28 @@ function renderWeavingTab() {
   $('weaving-maxMoney').textContent = fmt(S.maxMoneyHeld);
   let wlv = S.lvRoot[5] || 0;
 
-  // 计算基础值（未乘任何加成）
+  // 实时计算基础值
   let base1 = weavingCalc(cost1, S.maxMoneyHeld);
   let base2 = weavingCalc(cost2, S.maxMoneyHeld);
   let base3 = weavingCalc(cost3, S.maxMoneyHeld);
 
+  // 计算最终值（含成就24）
+  let final1 = base1;
+  let final2 = base2;
+  if (S.ach[24]) {
+    final1 = Math.floor(base1 * 1.2);
+    final2 = Math.floor(base2 * 1.2);
+  }
+
+  // 同步到 S
+  S.weaving1 = final1;
+  S.weaving2 = final2;
+  S.weaving3 = base3;
+
   // 织线1
   if (wlv >= 1) {
     $('weaving-box-1').style.display = 'block';
-    $('weaving-1').textContent = S.weaving1;
-    // 公式
+    $('weaving-1').textContent = final1;
     let f1 = `[${base1}`;
     if (S.ach[24]) f1 += `×[成就24]1.2`;
     f1 += `]`;
@@ -3678,7 +4355,7 @@ function renderWeavingTab() {
   // 织线2
   if (wlv >= 2) {
     $('weaving-box-2').style.display = 'block';
-    $('weaving-2').textContent = S.weaving2;
+    $('weaving-2').textContent = final2;
     let f2 = `[${base2}`;
     if (S.ach[24]) f2 += `×[成就24]1.2`;
     f2 += `]`;
@@ -3690,7 +4367,7 @@ function renderWeavingTab() {
   // 织线3
   if (wlv >= 3) {
     $('weaving-box-3').style.display = 'block';
-    $('weaving-3').textContent = S.weaving3;
+    $('weaving-3').textContent = base3;
     let f3 = `[${base3}]`;
     $('weaving-formula-3').textContent = f3;
   } else {
@@ -4477,7 +5154,7 @@ function startGame() {
       initMusic();
       return;
     } catch (e) {
-      log('自动存档损坏，开始新游戏。', 'dmg');
+      log('自动存档损坏，开始新游戏。原因：' + e.message, 'dmg');
     }
   }
 
