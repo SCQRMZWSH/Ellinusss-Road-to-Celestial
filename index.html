@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 4.8</title>
+<title>厄凛娜斯的成神之路 · 4.9</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -1086,6 +1086,10 @@
             <span class="desc">每级使怪物防御力 -1，可以因此使怪物防御力降低至 0 以下。价格：(1.33×10^10)×11.4^n</span></button>
           <button id="ux6" style="display:none;">更邪修的休息 <span class="lvl" id="lx6">Lv.0</span><span class="cost" id="cx6">抹除者送你的</span>
             <span class="desc">休息将不会恢复生命值。上限1级。在0级时购买会变为1级并生效，在1级时购买会变为0级并失效。</span></button>
+          <button id="ux7" style="display:none;">生命值 +100 <span class="lvl" id="lx7">Lv.0</span><span class="cost" id="cx7">0</span>
+            <span class="desc">生命值 +100。价格：(3×10^9)×1.1^n</span></button>
+          <button id="ux8" style="display:none;">高能邪莲飞弹 <span class="lvl" id="lx8">Lv.0</span><span class="cost" id="cx8">0</span>
+            <span class="desc">独立效果，邪莲花攻击力 ×(1+等级×0.07)。价格：(10^9)×1.3^n</span></button>
         </div>
       </div>
       <div class="col">
@@ -1493,6 +1497,7 @@ const S = {
   rawAtk: 15,
   rawDef: 2,
   baseHp: 100,
+  bonusHpFromXie: 0,   // 邪茎7 提供的额外生命值
   // 当前显示值（经伤残等级削减后）
   atk: 15,
   def: 2,
@@ -1537,7 +1542,7 @@ const S = {
   // 升级等级
   lv: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0 },
   lvRoot: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0 },
-  lvXie: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 }, // 升级 · 邪茎（独立）
+  lvXie: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 }, // 升级 · 邪茎（独立）
   // 进度
   done: false,
   stage: 1,              // 1=萌生，2=残根
@@ -1608,6 +1613,8 @@ function costX2(n) { return numMul(makeNum(1, 9), numFrom(Math.pow(1.25, n))); }
 function costX3(n) { return numMul(makeNum(2.5, 8), numFrom(Math.pow(2, n))); }
 function costX4(n) { return numFrom(Math.pow(10, 9 + n)); }
 function costX5(n) { return numMul(makeNum(1.33, 10), numFrom(Math.pow(11.4, n))); }
+function costX7(n) { return numMul(makeNum(3, 9), numFrom(Math.pow(1.1, n))); }
+function costX8(n) { return numMul(makeNum(1, 9), numFrom(Math.pow(1.3, n))); }
 
 // ============================================================
 // 第四部分：伤残系统核心
@@ -1672,7 +1679,7 @@ function recalc() {
   let bonusHpFromCap = atkOver * atkRate + defOver * defRate;
 
   // 2. 基础生命上限 = 100 + 萌生3 + 邪念无伤转化
-  let baseMaxHp = 100 + baseHpFromLevel + bonusHpFromCap;
+  let baseMaxHp = 100 + baseHpFromLevel + bonusHpFromCap + S.bonusHpFromXie;
 
   // 3. 伤残等级削弱攻防
   let dLv = S.disabilityLv;
@@ -2557,7 +2564,9 @@ function yuanyinAttack(m) {
     // 先算总伤害
     for (let l of S.lotuses) {
       if (l.bloomed) {
-        let lDmg = calcDamage(l.atk, m.def, l.firepower, true);
+        let xieMul = 1 + S.lvXie[8] * 0.07;
+        let effectiveAtk = xieMul !== 1 ? numMul(l.atk, numFrom(xieMul)) : l.atk;
+        let lDmg = calcDamage(effectiveAtk, m.def, l.firepower, true);
         let ltd = timeDomainMultiplier();
         if (ltd !== 1) lDmg = numMul(lDmg, numFrom(ltd));
         if (S.damageBonus > 0) lDmg = numMul(lDmg, numFrom(1 + S.damageBonus));
@@ -2727,7 +2736,10 @@ function releaseLotusSeed(position) {
 
 // 邪莲花攻击
 function lotusAttack(l, m) {
-  let dmg = calcDamage(l.atk, m.def, l.firepower, true);
+  // ★ 邪茎8：高能邪莲飞弹
+  let xieMul = 1 + S.lvXie[8] * 0.07;
+  let effectiveAtk = xieMul !== 1 ? numMul(l.atk, numFrom(xieMul)) : l.atk;
+  let dmg = calcDamage(effectiveAtk, m.def, l.firepower, true);
   let td = timeDomainMultiplier();
   if (td !== 1) dmg = numMul(dmg, numFrom(td));
   if (S.damageBonus > 0) dmg = numMul(dmg, numFrom(1 + S.damageBonus));
@@ -3216,7 +3228,9 @@ function renderBattle() {
     $('lotus-range').textContent = sampleLotus ? sampleLotus.range.toFixed(2) + 'm' : lotusRange().toFixed(1) + 'm';
     $('lotus-interval').textContent = sampleLotus ? sampleLotus.interval.toFixed(2) + 's' : lotusInterval().toFixed(1) + 's';
     if (sampleLotus) {
-      $('lotus-atk').textContent = fmt(sampleLotus.atk);
+      let xieMul2 = 1 + S.lvXie[8] * 0.07;
+      let shownAtk = xieMul2 !== 1 ? numMul(sampleLotus.atk, numFrom(xieMul2)) : sampleLotus.atk;
+      $('lotus-atk').textContent = fmt(shownAtk);
       $('lotus-def').textContent = fmt(sampleLotus.def);
       $('lotus-dlv').textContent = fmtNum(sampleLotus.disabilityLv);
       $('lotus-dmg-bonus').textContent = `+${(S.damageBonus * 100).toFixed(1)}%`;
@@ -3264,7 +3278,9 @@ function renderBattle() {
     }
     // ★ 邪莲花单次伤害
     if (m && sampleLotus) {
-      let ld = calcDamage(sampleLotus.atk, m.def, sampleLotus.firepower, true);
+      let xieMul = 1 + S.lvXie[8] * 0.07;
+      let effectiveAtk = xieMul !== 1 ? numMul(sampleLotus.atk, numFrom(xieMul)) : sampleLotus.atk;
+      let ld = calcDamage(effectiveAtk, m.def, sampleLotus.firepower, true);
       let ltd = timeDomainMultiplier();
       if (ltd !== 1) ld = numMul(ld, numFrom(ltd));
       if (S.damageBonus > 0) ld = numMul(ld, numFrom(1 + S.damageBonus));
@@ -3519,7 +3535,7 @@ function renderUpgradeTab() {
   // ★ 邪茎（第三阶段解锁）
   if (S.stage >= 3) {
     if ($('panel-xie')) $('panel-xie').style.display = 'block';
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 8; i++) {
       if ($('ux' + i)) $('ux' + i).style.display = 'block';
       let c;
       if (i === 1) c = costX1(S.lvXie[1]);
@@ -3528,6 +3544,8 @@ function renderUpgradeTab() {
       else if (i === 4) c = costX4(S.lvXie[4]);
       else if (i === 5) c = costX5(S.lvXie[5]);
       else if (i === 6) c = null;   // 抹除者送的
+      else if (i === 7) c = costX7(S.lvXie[7]);
+      else if (i === 8) c = costX8(S.lvXie[8]);
       if ($('cx' + i)) {
         if (i === 6) {
           $('cx' + i).textContent = '抹除者送你的';
@@ -3790,12 +3808,15 @@ function buyXie(idx) {
   else if (idx === 4) cost = costX4(n);
   else if (idx === 5) cost = costX5(n);
   // idx === 6 不需要 cost，抹除者送的
+  else if (idx === 7) cost = costX7(n);
+  else if (idx === 8) cost = costX8(n);
 
   if (idx !== 6 && numCmp(S.money, cost) < 0) return;
   if (idx === 1 && S.lvXie[1] >= 4) return;
   if (idx === 2 && S.lvXie[2] >= 8) return;
   if (idx === 3 && S.lvXie[3] >= 15) return;
   if (idx === 4 && S.lvXie[4] >= 4) return;
+  // 邪茎5、7 、8无上限
 
   if (idx !== 6) S.money = numSub(S.money, cost);
   if (idx === 6) {
@@ -3846,6 +3867,13 @@ function buyXie(idx) {
   if (idx === 6) {
     // 已在上面处理
   }
+  if (idx === 7) {
+    S.bonusHpFromXie += 100;
+    log(`生命值 +100。`);
+  }
+  if (idx === 8) {
+    log(`高能邪莲飞弹 Lv.${S.lvXie[8]}：邪莲花攻击力 ×(1+${(S.lvXie[8]*0.07).toFixed(2)})。`);
+  }
 
   recalc();
   renderUpgradeTab();
@@ -3886,6 +3914,8 @@ $('ux3').onclick = () => buyXie(3);
 $('ux4').onclick = () => buyXie(4);
 $('ux5').onclick = () => buyXie(5);
 $('ux6').onclick = () => buyXie(6);
+$('ux7').onclick = () => buyXie(7);
+$('ux8').onclick = () => buyXie(8);
 
 // ============================================================
 // 第十五部分：怪物等级选择
@@ -3939,6 +3969,7 @@ function serialize() {
     rawAtk: S.rawAtk,
     rawDef: S.rawDef,
     baseHp: S.baseHp,
+    bonusHpFromXie: S.bonusHpFromXie,
     atk: S.atk,
     def: S.def,
     maxHp: S.maxHp,
@@ -4075,6 +4106,7 @@ function deserialize(data) {
   S.rawAtk = data.rawAtk !== undefined ? data.rawAtk : 15;
   S.rawDef = data.rawDef !== undefined ? data.rawDef : 2;
   S.baseHp = data.baseHp !== undefined ? data.baseHp : 100;
+  S.bonusHpFromXie = data.bonusHpFromXie !== undefined ? data.bonusHpFromXie : 0;
   S.atk = data.atk || S.rawAtk;
   S.def = data.def || S.rawDef;
   S.maxHp = data.maxHp || 100;
@@ -4169,7 +4201,7 @@ function deserialize(data) {
   // 残根
   S.lvRoot = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, ...(data.lvRoot || {}) };
   // 邪茎
-  S.lvXie = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, ...(data.lvXie || {}) };
+  S.lvXie = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, ...(data.lvXie || {}) };
   S.disabilityMax = data.disabilityMax !== undefined ? data.disabilityMax : 100;
   S.expFormulaChanged = data.expFormulaChanged || false;
 
@@ -4651,45 +4683,6 @@ function executeDelexe(cmd) {
       return;
     }
 
-    // delexe wipesave upgrade <阶段> <编号>
-    if (sub === 'upgrade' && args.length === 3) {
-      const stage = parseInt(args[1], 10);
-      const idx = parseInt(args[2], 10);
-      const stageNames = { 1: '萌生', 2: '残根' };
-      if (stageNames[stage] && idx >= 1) {
-        if (stage === 1) {
-          // 萌生1-7
-          if (idx >= 1 && idx <= 7 && S.lv[idx] !== undefined) {
-            S.lv[idx] = 0;
-            // 萌生1-3 同时重置织线替代（如果有）
-            if (idx <= 3) {
-              // 不需要额外处理，recalc 会用 S.lv
-            }
-            alert(`抹除者帮你把升级 · 萌生${idx} 等级重置了，你不会卡住了吧？`);
-            recalc();
-            renderUpgradeTab();
-            renderBattle();
-            saveAuto();
-            return;
-          }
-        }
-        if (stage === 2) {
-          // 残根1-10
-          if (idx >= 1 && idx <= 10 && S.lvRoot[idx] !== undefined) {
-            S.lvRoot[idx] = 0;
-            alert(`抹除者帮你把升级 · 残根${idx} 等级重置了，你不会卡住了吧？`);
-            recalc();
-            renderUpgradeTab();
-            renderBattle();
-            saveAuto();
-            return;
-          }
-        }
-      }
-      alert('抹除者不认得这个升级，你再看看是不是输错了');
-      return;
-    }
-
     // delexe wipesave shangcan <等级>
     if (sub === 'shangcan' && args.length === 2) {
       const target = parseInt(args[1], 10);
@@ -4723,7 +4716,6 @@ function executeDelexe(cmd) {
       'delexe statsview all —— 展示所有变量\n' +
       'delexe statsview <变量名> —— 展示单个变量\n' +
       'delexe wipesave all —— 删除存档\n' +
-      'delexe wipesave upgrade <阶段> <编号> —— 重置升级等级（阶段1=萌生，2=残根）\n' +
       'delexe wipesave shangcan <等级> —— 重置伤残等级至指定值（只能降不能升）\n' +
       'delexe help —— 查看本帮助'
     );
