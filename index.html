@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 4.12</title>
+<title>厄凛娜斯的成神之路 · 4.13</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -5064,6 +5064,7 @@ const MUSIC = {
   isPlaying: false,
   loading: false          // ★ 加载中
 };
+let musicRetryTimer = null;   // ★ 重试定时器句柄（可取消）
 
 function initMusic() {
   MUSIC.audio = $('bgm');
@@ -5083,8 +5084,9 @@ function initMusic() {
     MUSIC.mode = $('music-mode').value;
     log(`播放模式：${$('music-mode').selectedOptions[0].textContent}`);
   };
-  // ★ 加载状态事件
+  // ★ 统一在此绑定音频事件，playMusic 内不再重复绑定
   MUSIC.audio.oncanplay = () => {
+    musicFailCount = 0;
     MUSIC.loading = false;
     MUSIC.isPlaying = true;
     renderMusicList();
@@ -5094,61 +5096,7 @@ function initMusic() {
     renderMusicList();
   };
   MUSIC.audio.onplaying = () => {
-    MUSIC.loading = false;
-    MUSIC.isPlaying = true;
-    renderMusicList();
-  };
-  MUSIC.audio.onerror = () => {
-    MUSIC.loading = false;
-    MUSIC.isPlaying = false;
-    renderMusicList();
-  };
-}
-
-function toggleMusic() {
-  MUSIC.enabled = !MUSIC.enabled;
-  $('btn-music-toggle').textContent = MUSIC.enabled ? '音乐：开' : '音乐：关';
-  $('music-toggle-2').textContent = MUSIC.enabled ? '开启' : '关闭';
-  if (MUSIC.enabled) {
-    playMusic(MUSIC.currentIndex);
-  } else {
-    MUSIC.audio.pause();
-  }
-  renderMusicList();
-}
-
-let musicFailCount = 0;  //初始化播放失败次数
-
-function playMusic(index) {
-  if (!MUSIC_DATA[index]) return;
-  MUSIC.currentIndex = index;
-  MUSIC.audio.src = MUSIC_DATA[index].url;
-  MUSIC.audio.volume = MUSIC.volume;
-  MUSIC.loading = true;          // ★ 加载中
-  MUSIC.isPlaying = false;
-  renderMusicList();
-  MUSIC.audio.play().catch(e => {
-    musicFailCount++;
-    log('音乐播放失败：' + e.message, 'dmg');
-    MUSIC.loading = false;
-    MUSIC.isPlaying = false;
-    renderMusicList();
-    if (MUSIC.enabled && musicFailCount < 3) {
-      setTimeout(() => {
-        if (MUSIC.enabled && !MUSIC.isPlaying) {
-          nextMusic();
-        }
-      }, 1000);
-    } else if (musicFailCount >= 3) {
-      log('音乐连续播放失败 3 次，已停止尝试。', 'dmg');
-      MUSIC.enabled = false;
-      $('btn-music-toggle').textContent = '音乐：关';
-      $('music-toggle-2').textContent = '关闭';
-      musicFailCount = 0;
-    }
-  });
-  MUSIC.audio.oncanplay = () => {
-    musicFailCount = 0;   // 成功加载，重置计数
+    musicFailCount = 0;
     MUSIC.loading = false;
     MUSIC.isPlaying = true;
     renderMusicList();
@@ -5158,21 +5106,93 @@ function playMusic(index) {
     MUSIC.isPlaying = false;
     renderMusicList();
     log('音频加载失败。', 'dmg');
-    if (MUSIC.enabled) {
-      setTimeout(() => nextMusic(), 1000);
-    }
+    scheduleNextMusic();
   };
   MUSIC.audio.onstalled = () => {
-    log('音频加载停滞，尝试跳过。', 'dmg');
-    if (MUSIC.enabled) {
-      setTimeout(() => nextMusic(), 1000);
-    }
+    // ★ stalled 是缓冲停滞，可恢复，不切歌，只标记加载中
+    MUSIC.loading = true;
+    renderMusicList();
   };
   MUSIC.audio.onended = () => {
     log('音乐播放结束，准备下一首。');
     if (!MUSIC.enabled) return;
     nextMusic();
   };
+}
+
+function toggleMusic() {
+  MUSIC.enabled = !MUSIC.enabled;
+  $('btn-music-toggle').textContent = MUSIC.enabled ? '音乐：开' : '音乐：关';
+  $('music-toggle-2').textContent = MUSIC.enabled ? '开启' : '关闭';
+  if (MUSIC.enabled) {
+    musicFailCount = 0;
+    playMusic(MUSIC.currentIndex);
+  } else {
+    clearRetryTimer();
+    MUSIC.audio.pause();
+    MUSIC.isPlaying = false;
+    MUSIC.loading = false;
+  }
+  renderMusicList();
+}
+
+let musicFailCount = 0;  //初始化播放失败次数
+
+function playMusic(index) {
+  if (!MUSIC_DATA[index]) return;
+  // ★ 取消排队中的重试，避免旧定时器干扰新歌
+  clearRetryTimer();
+  MUSIC.currentIndex = index;
+  // ★ 先暂停并释放上一次 play() 请求，避免 AbortError
+  try { MUSIC.audio.pause(); } catch (e) {}
+  MUSIC.audio.src = MUSIC_DATA[index].url;
+  MUSIC.audio.volume = MUSIC.volume;
+  MUSIC.loading = true;
+  MUSIC.isPlaying = false;
+  renderMusicList();
+  const playPromise = MUSIC.audio.play();
+  if (playPromise && playPromise.catch) {
+    playPromise.catch(e => {
+      // ★ AbortError 是换源导致的正常中断，不计失败、不重试
+      if (e && e.name === 'AbortError') return;
+      musicFailCount++;
+      log('音乐播放失败：' + e.message, 'dmg');
+      MUSIC.loading = false;
+      MUSIC.isPlaying = false;
+      renderMusicList();
+      if (!MUSIC.enabled) return;
+      if (musicFailCount >= 3) {
+        log('音乐连续播放失败 3 次，已停止尝试。', 'dmg');
+        MUSIC.enabled = false;
+        $('btn-music-toggle').textContent = '音乐：关';
+        $('music-toggle-2').textContent = '关闭';
+        musicFailCount = 0;
+        clearRetryTimer();
+      } else {
+        scheduleNextMusic();
+      }
+    });
+  }
+}
+
+// ★ 安排一次延迟切歌（只保留一个定时器，可取消）
+function scheduleNextMusic() {
+  if (!MUSIC.enabled) return;
+  clearRetryTimer();
+  musicRetryTimer = setTimeout(() => {
+    musicRetryTimer = null;
+    if (MUSIC.enabled && !MUSIC.isPlaying) {
+      nextMusic();
+    }
+  }, 1000);
+}
+
+// ★ 取消排队中的切歌定时器
+function clearRetryTimer() {
+  if (musicRetryTimer !== null) {
+    clearTimeout(musicRetryTimer);
+    musicRetryTimer = null;
+  }
 }
 
 function nextMusic() {
@@ -5188,7 +5208,13 @@ function nextMusic() {
   if (MUSIC.mode === 'custom') {
     // 只播放 customList 里的
     let available = MUSIC_DATA.map((m, i) => i).filter(i => MUSIC.customList.includes(MUSIC_DATA[i].id));
-    if (available.length === 0) { MUSIC.audio.pause(); return; }
+    if (available.length === 0) {
+      MUSIC.audio.pause();
+      MUSIC.isPlaying = false;
+      MUSIC.loading = false;
+      renderMusicList();
+      return;
+    }
     let curPos = available.indexOf(MUSIC.currentIndex);
     let nextPos = (curPos + 1) % available.length;
     playMusic(available[nextPos]);
