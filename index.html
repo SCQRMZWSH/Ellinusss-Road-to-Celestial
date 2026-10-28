@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 4.14</title>
+<title>厄凛娜斯的成神之路 · 4.19</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -1138,8 +1138,10 @@
             <span class="desc">生命值 +100。价格：(3×10^9)×1.1^n</span></button>
           <button id="ux8" style="display:none;">高能邪莲飞弹 <span class="lvl" id="lx8">Lv.0</span><span class="cost" id="cx8">0</span>
             <span class="desc">独立效果，邪莲花攻击力 ×(1+等级×0.07)。价格：(10^9)×1.3^n</span></button>
-          <button id="ux9" class="delexe-upgrade" style="display:none;">抹除·萌生之价 <span class="lvl" id="lx9">Lv.0</span><span class="cost" id="cx9">0</span>
-            <span class="desc">1~3级：升级·萌生n的价格常数乘区开平方。4~6级：完全抹除升级·萌生(n-3)的常数乘区，升级·萌生(n-3)的常数乘区归一。价格：5×10^(10+(2n÷3))</span></button>
+          <button id="ux9" class="delexe-upgrade" style="display:none;">萌生抹除 <span class="lvl" id="lx9">Lv.0</span><span class="cost" id="cx9">0</span>
+            <span class="desc">1~3级：升级·萌生n的价格常数乘区开平方。4~6级：完全抹除升级·萌生(n-3)的常数乘区，升级·萌生(n-3)的常数乘区归一。价格：5×10^(10+(2n÷3))。注意：改价会追溯影响织线对历史峰值的重算。</span></button>
+          <button id="ux10" class="green-upgrade" style="display:none;">莲契地 <span class="lvl" id="lx10">未解锁</span><span class="cost" id="cx10">2×10^12</span>
+            <span class="desc">属于厄凛娜斯的，莲契地。仅可购买一次。购买后检查一下伤残秘境TAB。在第四阶段更新前没有任何作用。</span></button>
         </div>
       </div>
       <div class="col">
@@ -1192,6 +1194,22 @@
           <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 萌生3</div>
           <div style="font-size:11px;color:#525252;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·萌生3的购买次数。</div>
           <div style="font-size:16px;color:#000;">当前：<b id="weaving-3">0</b> <span id="weaving-formula-3" style="font-size:11px;color:#525252;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:14px;color:#222;margin-top:10px;margin-bottom:10px;font-weight:bold;">织线 · 残根</div>
+      <div style="display:flex;gap:12px;">
+        <div id="weaving-box-r1" style="display:none;flex:1;background:#ccc;border:1px solid #a0a0a0;border-radius:6px;padding:12px;color:#1a1a1a;">
+          <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 残根1</div>
+          <div style="font-size:11px;color:#525252;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·残根1的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-r1">0</b> <span id="weaving-formula-r1" style="font-size:11px;color:#525252;"></span></div>
+        </div>
+      </div>
+      <div style="font-size:14px;color:#222;margin-top:10px;margin-bottom:10px;font-weight:bold;">织线 · 邪茎</div>
+      <div style="display:flex;gap:12px;">
+        <div id="weaving-box-x7" style="display:none;flex:1;background:#ccc;border:1px solid #a0a0a0;border-radius:6px;padding:12px;color:#1a1a1a;">
+          <div style="font-size:13px;margin-bottom:6px;font-weight:bold;">织线 · 邪茎7</div>
+          <div style="font-size:11px;color:#525252;margin-bottom:8px;line-height:1.5;">按照曾最多持有的凄残币计算升级·邪茎7的购买次数。</div>
+          <div style="font-size:16px;color:#000;">当前：<b id="weaving-x7">0</b> <span id="weaving-formula-x7" style="font-size:11px;color:#525252;"></span></div>
         </div>
       </div>
     </div>
@@ -1632,6 +1650,8 @@ const S = {
   weaving1: 0,                   // 织线·萌生1 当前等级
   weaving2: 0,                   // 织线·萌生2 当前等级
   weaving3: 0,                   // 织线·萌生3 当前等级
+  weavingR1: 0,                  // 织线·残根1 当前等级（成就43解锁）
+  weavingX7: 0,                  // 织线·邪茎7 当前等级（成就43解锁）
   autoSaveInterval: 30,    // 自动存档间隔（秒），默认 30s
   autoSaveTimer: 0,        // 自动存档计时器
   lastAutoSave: 0,         // 上次自动存档的时间（用于显示）
@@ -1711,8 +1731,6 @@ function costX9(n) { return numMul(makeNum(5, 10), numFrom(Math.pow(10, 2 * n / 
 function recalc() {
   // ★ 禁忌知识1：基础属性临时覆盖
   if (forbiddenActive === 1) {
-    S.rawAtk = 15;
-    S.rawDef = 5;
     let baseMaxHp = 600;
     // 跳过正常计算，直接设派生值
     S.atk = 15;
@@ -1745,6 +1763,10 @@ function recalc() {
   let effDefLv = (wlv >= 2) ? S.weaving2 : S.lv[2];
   let effHpLv  = (wlv >= 3) ? S.weaving3 : S.lv[3];
 
+  // ★ 成就43 解锁的织线·残根1 / 织线·邪茎7
+  let effRoot1Lv = S.ach[43] ? S.weavingR1 : S.lvRoot[1];
+  let effXie7Lv  = S.ach[43] ? S.weavingX7 : S.lvXie[7];
+
   // 用有效等级算基础属性
   S.rawAtk = 15 + effAtkLv;
   S.rawDef = 2 + effDefLv;
@@ -1766,7 +1788,15 @@ function recalc() {
   let bonusHpFromCap = atkOver * atkRate + defOver * defRate;
 
   // 2. 基础生命上限 = 100 + 萌生3 + 邪念无伤转化
-  let baseMaxHp = 100 + baseHpFromLevel + bonusHpFromCap + S.bonusHpFromXie;
+  // ★ bonusHpFromXie 原本由 lvXie[7] 累加，这里改用有效等级重算
+  //    手动买的 lvXie[7] 在织线生效时不参与，改由 weavingX7 提供
+  let bonusHpFromXieEff = 0;
+  if (S.ach[43]) {
+    bonusHpFromXieEff = (S.weavingX7 || 0) * 100;
+  } else {
+    bonusHpFromXieEff = S.bonusHpFromXie;
+  }
+  let baseMaxHp = 100 + baseHpFromLevel + bonusHpFromCap + bonusHpFromXieEff;
 
   // 3. 伤残等级削弱攻防
   let dLv = S.disabilityLv;
@@ -1928,7 +1958,8 @@ function calcDamage(atkNum, defNum, firepower, isPlayerAttack) {
 // 独立加成：时间抹除域
 function timeDomainMultiplier() {
   if (!S.disabilityUnlocked) return 1;
-  let lv = S.lvRoot[1];
+  // ★ 成就43 解锁织线·残根1 后，用织线等级覆盖手动等级
+  let lv = S.ach[43] ? (S.weavingR1 || 0) : S.lvRoot[1];
   if (lv === 0) return 1;
   return Math.pow(1.2, lv);
 }
@@ -2026,8 +2057,8 @@ function completeAchievement(id) {
     checkStoryTrigger('1-1');   // ★ 触发剧情1-1
   }
   if (id === 12) {
-    S.moneyMultiplier = 2.0;
-    log('成就奖励：凄残币收入 ×2。', 'hl');
+    S.moneyMultiplier = S.moneyMultiplier * 2;
+    log('成就奖励：凄残币获取 ×2（叠乘后当前 ×${S.moneyMultiplier}）。', 'hl');
   }
   if (id === 13) {
     S.xienianUnlocked = true;
@@ -2115,6 +2146,17 @@ function completeAchievement(id) {
   }
   if (id === 42) {
     log('成就奖励：解锁升级 · 邪茎9，一个和抹除者有关的升级。', 'hl');
+  }
+  if (id === 43) {
+    // ★ 织线·萌生3 数量 + 邪茎7 等级（在 renderWeavingTab 里按 ach[43] 动态加，不在这里累加 S.weaving3）
+    // ★ 初始化织线·残根1 / 织线·邪茎7
+    recalcWeavingR1X7();
+    log('成就奖励：织线 · 萌生3 数量 + 邪茎7 等级。解锁织线 · 残根1 与 织线 · 邪茎7。', 'hl');
+  }
+  if (id === 44) {
+    // 在成就12（×2）基础上叠乘 ×4，最终 ×8
+    S.moneyMultiplier = S.moneyMultiplier * 4;
+    log(`成就奖励：凄残币获取 ×4（叠乘后当前 ×${S.moneyMultiplier}）。第三阶段目标完成后，升级 TAB 会有新变化。`, 'hl');
   }
 
   // 刷新成就面板
@@ -2571,68 +2613,7 @@ function playerAttack(m) {
   S.battleDamagePlayer = numAdd(S.battleDamagePlayer, dmg);
   m.hp = numSub(m.hp, dmg);
   if (numCmp(m.hp, makeNum(0,0)) <= 0) {
-    // 掉落
-    let drop = m.drop;
-    if (S.moneyMultiplier !== 1.0) {
-      drop = numMul(drop, numFrom(S.moneyMultiplier));
-    }
-    S.money = numAdd(S.money, drop);
-    // ★ 更新曾最多持有
-    if (numCmp(S.money, S.maxMoneyHeld) > 0) {
-      S.maxMoneyHeld = { m: S.money.m, e: S.money.e };
-      if (S.weavingUnlocked) {
-        // 重算织线等级
-        let budget = S.maxMoneyHeld;
-        let w1 = weavingCalc(cost1, budget);
-        if (S.ach[24]) w1 = Math.floor(w1 * 1.2);
-        let w2 = weavingCalc(cost2, budget);
-        if (S.ach[24]) w2 = Math.floor(w2 * 1.2);
-        let w3 = weavingCalc(cost3, budget);
-        S.weaving1 = w1;
-        S.weaving2 = w2;
-        S.weaving3 = w3;
-        recalc();   // ★ 立即应用
-        renderWeavingTab();
-      }
-    }
-    // ★ 输出占比 log
-    let totalDmg = numAdd(S.battleDamagePlayer, S.battleDamageLotus);
-    if (numCmp(totalDmg, makeNum(0,0)) > 0) {
-      // 用对数算占比
-      let pLog = Math.log10(S.battleDamagePlayer.m) + S.battleDamagePlayer.e;
-      let lLog = Math.log10(S.battleDamageLotus.m) + S.battleDamageLotus.e;
-      let maxLog = Math.max(pLog, lLog);
-      let pVal = Math.pow(10, pLog - maxLog);
-      let lVal = Math.pow(10, lLog - maxLog);
-      let totalVal = pVal + lVal;
-      let pPct = totalVal > 0 ? (pVal / totalVal) * 100 : 0;
-      let lPct = totalVal > 0 ? (lVal / totalVal) * 100 : 0;
-      log(`本场输出：厄凛娜斯 ${fmt(S.battleDamagePlayer)}（${pPct.toFixed(1)}%），邪莲花 ${fmt(S.battleDamageLotus)}（${lPct.toFixed(1)}%）`);
-    }
-    // 重置
-    S.battleDamagePlayer = makeNum(0, 0);
-    S.battleDamageLotus = makeNum(0, 0);
-    log(`击杀 Lv.${m.lv} 怪物，获得 ${fmt(drop)} 凄残币。`, 'hl');
-
-    if (m.lv > S.maxBeaten) {
-      S.maxBeaten = m.lv;
-      log(`已击败最高等级更新为 Lv.${S.maxBeaten}。`, 'hl');
-      if (m.lv >= 60 && !S.cleared) {
-      S.stage = 3;
-      win();
-      }
-    }
-    // ★ 剧情 3-4：首次击败 51 级及以上怪物
-    if (m.lv >= 51 && !S.storyUnlocked['3-4']) {
-      checkStoryTrigger('3-4');
-    }
-    // ★ 成就41：首次击败 51 级怪物
-    if (m.lv >= 51 && !S.ach[41]) {
-      completeAchievement(41);
-    }
-    if (m.lv >= 10) completeAchievement(12);
-    // 萌生7 首次达到 1e7 时可购买（在 render 里控制显示）
-    spawnMonster();
+    onMonsterKilled(m, 'player');
     return true;
   }
   return false;
@@ -2657,9 +2638,9 @@ function yuanyinAttack(m) {
   if (Math.random() < S.yuanyinProc && S.lotuses.length > 0) {
     proc = true;
     S.yuanyinLastProc = true;
-    // 先算总伤害
+    // 先算总伤害（与实际攻击条件对齐：只统计已长成且已激活的邪莲花）
     for (let l of S.lotuses) {
-      if (l.bloomed) {
+      if (l.bloomed && l.active) {
         let xieMul = 1 + S.lvXie[8] * 0.07;
         let effectiveAtk = xieMul !== 1 ? numMul(l.atk, numFrom(xieMul)) : l.atk;
         let lDmg = calcDamage(effectiveAtk, m.def, l.firepower, true);
@@ -2682,39 +2663,7 @@ function yuanyinAttack(m) {
   }
   // 怨引本身攻击
   if (numCmp(m.hp, makeNum(0,0)) <= 0) {
-    // 击杀
-    let drop = m.drop;
-    if (S.moneyMultiplier !== 1.0) drop = numMul(drop, numFrom(S.moneyMultiplier));
-    S.money = numAdd(S.money, drop);
-    if (numCmp(S.money, S.maxMoneyHeld) > 0) S.maxMoneyHeld = { m: S.money.m, e: S.money.e };
-    // 输出占比 log
-    let totalDmg = numAdd(S.battleDamagePlayer, S.battleDamageLotus);
-    if (numCmp(totalDmg, makeNum(0,0)) > 0) {
-      let pLog = S.battleDamagePlayer.m > 0 ? Math.log10(S.battleDamagePlayer.m) + S.battleDamagePlayer.e : -Infinity;
-      let lLog = S.battleDamageLotus.m > 0 ? Math.log10(S.battleDamageLotus.m) + S.battleDamageLotus.e : -Infinity;
-      let maxLog = Math.max(pLog, lLog);
-      let pVal = pLog === -Infinity ? 0 : Math.pow(10, pLog - maxLog);
-      let lVal = lLog === -Infinity ? 0 : Math.pow(10, lLog - maxLog);
-      let totalVal = pVal + lVal;
-      let pPct = totalVal > 0 ? (pVal / totalVal) * 100 : 0;
-      let lPct = totalVal > 0 ? (lVal / totalVal) * 100 : 0;
-      log(`本场输出：厄凛娜斯 ${fmt(S.battleDamagePlayer)}（${pPct.toFixed(1)}%），邪莲花 ${fmt(S.battleDamageLotus)}（${lPct.toFixed(1)}%）`);
-    }
-    S.battleDamagePlayer = makeNum(0, 0);
-    S.battleDamageLotus = makeNum(0, 0);
-    log(`怨引击杀 Lv.${m.lv} 怪物，获得 ${fmt(drop)} 凄残币。`, 'hl');
-    if (m.lv > S.maxBeaten) S.maxBeaten = m.lv;
-    // ★ 剧情 3-4：首次击败 51 级及以上怪物
-    if (m.lv >= 51 && !S.storyUnlocked['3-4']) {
-      checkStoryTrigger('3-4');
-    }
-    // ★ 成就41：首次击败 51 级怪物
-    if (m.lv >= 51 && !S.ach[41]) {
-      completeAchievement(41);
-    }
-    if (m.lv >= 10) completeAchievement(12);
-    if (m.lv >= 60 && !S.cleared) { S.stage = 3; win(); }
-    spawnMonster();
+    onMonsterKilled(m, 'yuanyin');
     return true;
   }
   return false;
@@ -2842,47 +2791,78 @@ function lotusAttack(l, m) {
   S.battleDamageLotus = numAdd(S.battleDamageLotus, dmg);
   m.hp = numSub(m.hp, dmg);
   if (numCmp(m.hp, makeNum(0,0)) <= 0) {
-    // 击杀
-    let drop = m.drop;
-    if (S.moneyMultiplier !== 1.0) drop = numMul(drop, numFrom(S.moneyMultiplier));
-    S.money = numAdd(S.money, drop);
-    if (numCmp(S.money, S.maxMoneyHeld) > 0) {
-      S.maxMoneyHeld = { m: S.money.m, e: S.money.e };
-    }
-    // ★ 输出占比 log
-    let totalDmg = numAdd(S.battleDamagePlayer, S.battleDamageLotus);
-    if (numCmp(totalDmg, makeNum(0,0)) > 0) {
-      let pPct = 0, lPct = 0;
-      if (S.battleDamagePlayer.m > 0) {
-        pPct = (S.battleDamagePlayer.m * Math.pow(10, S.battleDamagePlayer.e - totalDmg.e)) * 100;
-      }
-      if (S.battleDamageLotus.m > 0) {
-        lPct = (S.battleDamageLotus.m * Math.pow(10, S.battleDamageLotus.e - totalDmg.e)) * 100;
-      }
-      log(`本场输出：厄凛娜斯 ${fmt(S.battleDamagePlayer)}（${pPct.toFixed(1)}%），邪莲花 ${fmt(S.battleDamageLotus)}（${lPct.toFixed(1)}%）`);
-    }
-    // 重置
-    S.battleDamagePlayer = makeNum(0, 0);
-    S.battleDamageLotus = makeNum(0, 0);
-    if (m.lv >= 60 && !S.cleared) {
-      S.stage = 3;
-      win();
-    }
-    log(`邪莲花击杀 Lv.${m.lv} 怪物，获得 ${fmt(drop)} 凄残币。`, 'hl');
-    if (m.lv > S.maxBeaten) S.maxBeaten = m.lv;
-    // ★ 剧情 3-4：首次击败 51 级及以上怪物
-    if (m.lv >= 51 && !S.storyUnlocked['3-4']) {
-      checkStoryTrigger('3-4');
-    }
-    // ★ 成就41：首次击败 51 级怪物
-    if (m.lv >= 51 && !S.ach[41]) {
-      completeAchievement(41);
-    }
-    if (m.lv >= 10) completeAchievement(12);
-    spawnMonster();
+    onMonsterKilled(m, 'lotus');
     return true;
   }
   return false;
+}
+
+// ★ 统一的击杀处理（掉钱→峰值→织线→占比log→成就→剧情→通关→spawn）
+// killer: 'player' | 'yuanyin' | 'lotus'
+function onMonsterKilled(m, killer) {
+  // 1. 掉钱
+  let drop = m.drop;
+  if (S.moneyMultiplier !== 1.0) drop = numMul(drop, numFrom(S.moneyMultiplier));
+  S.money = numAdd(S.money, drop);
+  // 2. 更新曾最多持有
+  if (numCmp(S.money, S.maxMoneyHeld) > 0) {
+    S.maxMoneyHeld = { m: S.money.m, e: S.money.e };
+    // 3. 织线重算（三处击杀路径统一刷新）
+    if (S.weavingUnlocked) {
+      let budget = S.maxMoneyHeld;
+      let w1 = weavingCalc(cost1, budget);
+      if (S.ach[24]) w1 = Math.floor(w1 * 1.2);
+      let w2 = weavingCalc(cost2, budget);
+      if (S.ach[24]) w2 = Math.floor(w2 * 1.2);
+      let w3 = weavingCalc(cost3, budget);
+      S.weaving1 = w1;
+      S.weaving2 = w2;
+      S.weaving3 = w3;
+      recalcWeavingR1X7();   // ★ 成就43 织线·残根1 / 邪茎7
+      recalc();
+      renderWeavingTab();
+    }
+  }
+  // 4. 输出占比 log
+  let totalDmg = numAdd(S.battleDamagePlayer, S.battleDamageLotus);
+  if (numCmp(totalDmg, makeNum(0,0)) > 0) {
+    let pLog = S.battleDamagePlayer.m > 0 ? Math.log10(S.battleDamagePlayer.m) + S.battleDamagePlayer.e : -Infinity;
+    let lLog = S.battleDamageLotus.m > 0 ? Math.log10(S.battleDamageLotus.m) + S.battleDamageLotus.e : -Infinity;
+    let maxLog = Math.max(pLog, lLog);
+    let pVal = pLog === -Infinity ? 0 : Math.pow(10, pLog - maxLog);
+    let lVal = lLog === -Infinity ? 0 : Math.pow(10, lLog - maxLog);
+    let totalVal = pVal + lVal;
+    let pPct = totalVal > 0 ? (pVal / totalVal) * 100 : 0;
+    let lPct = totalVal > 0 ? (lVal / totalVal) * 100 : 0;
+    log(`本场输出：厄凛娜斯 ${fmt(S.battleDamagePlayer)}（${pPct.toFixed(1)}%），邪莲花 ${fmt(S.battleDamageLotus)}（${lPct.toFixed(1)}%）`);
+  }
+  // 5. 重置本场输出
+  S.battleDamagePlayer = makeNum(0, 0);
+  S.battleDamageLotus = makeNum(0, 0);
+  // 6. 击杀 log（按 killer 区分文案）
+  let killerText = killer === 'yuanyin' ? '怨引击杀' : killer === 'lotus' ? '邪莲花击杀' : '击杀';
+  log(`${killerText} Lv.${m.lv} 怪物，获得 ${fmt(drop)} 凄残币。`, 'hl');
+  // 7. maxBeaten 更新
+  if (m.lv > S.maxBeaten) {
+    S.maxBeaten = m.lv;
+    log(`已击败最高等级更新为 Lv.${S.maxBeaten}。`, 'hl');
+  }
+  // 8. 剧情 3-4：首次击败 51 级及以上怪物
+  if (m.lv >= 51 && !S.storyUnlocked['3-4']) {
+    checkStoryTrigger('3-4');
+  }
+  // 9. 成就41：首次击败 51 级怪物
+  if (m.lv >= 51 && !S.ach[41]) {
+    completeAchievement(41);
+  }
+  if (m.lv >= 10) completeAchievement(12);
+  // 10. 60 级通关判定
+  if (m.lv >= 60 && !S.cleared) {
+    S.stage = 3;
+    win();
+  }
+  // 11. 生成下一只
+  spawnMonster();
 }
 
 // 怪物攻击玩家
@@ -2893,11 +2873,13 @@ function monsterAttack() {
   if (td !== 1) dmg = numMul(dmg, numFrom(td));
   let dmgVal = dmg.m * Math.pow(10, dmg.e);
 
-  // ★ 前排邪莲花优先承伤
+// ★ 前排邪莲花优先承伤
   let frontLotus = S.lotuses.find(l => l.position === 'front');
   if (frontLotus) {
-    // 前排邪莲花受伤
-    let lotusDmg = dmgVal;
+    // ★ 用邪莲花自身防御重算承伤（面板 DEF 参与计算）
+    let lotusDmgNum = calcDamage(m.atk, frontLotus.def, m.firepower, false);
+    if (td !== 1) lotusDmgNum = numMul(lotusDmgNum, numFrom(td));
+    let lotusDmg = lotusDmgNum.m * Math.pow(10, lotusDmgNum.e);
     // 先扣邪莲花的血
     if (frontLotus.hp.m * Math.pow(10, frontLotus.hp.e) > lotusDmg) {
       frontLotus.hp = numSub(frontLotus.hp, dmg);
@@ -3065,6 +3047,24 @@ function tick(dt) {
   // ★ 成就31：生命值达到 10000
   if (!S.ach[31] && S.curMaxHp >= 10000) {
     completeAchievement(31);
+  }
+  // ★ 成就43：最终生命上限达到 10^5
+  if (!S.ach[43] && S.curMaxHp >= 1e5) {
+    S.ach[43] = true;
+    completeAchievement(43);
+  }
+  // ★ 成就44：同时至少 5 条织线、10^5 生命上限、50 伤残程度
+  if (!S.ach[44]) {
+    let weavingCount = 0;
+    if (S.lvRoot[5] >= 1) weavingCount++;
+    if (S.lvRoot[5] >= 2) weavingCount++;
+    if (S.lvRoot[5] >= 3) weavingCount++;
+    // 织线·残根1 与 织线·邪茎7 需成就43解锁后才计入
+    if (S.ach[43]) { weavingCount += 1; /* 残根1 */ weavingCount += 1; /* 邪茎7 */ }
+    if (weavingCount >= 5 && S.curMaxHp >= 1e5 && S.disabilityDegree >= 50) {
+      S.ach[44] = true;
+      completeAchievement(44);
+    }
   }
 
   // 休息模式
@@ -3453,6 +3453,10 @@ function renderGoal() {
   } else if (S.stage === 3) {
     if (S.maxBeaten >= 60) {
       stageText = `<span class="done">第三阶段 · 邪茎：完成</span>`;
+      // ★ 若成就44未完成，引导查看升级TAB与成就44
+      if (!S.ach[44]) {
+        stageText += `，<span style="color:#ff6ad5">看看升级界面和成就44吧</span>`;
+      }
     } else {
       stageText = `第三阶段 · 邪茎：击败 <b>60</b> 级怪物（当前 ${S.maxBeaten}/60）`;
     }
@@ -3493,10 +3497,11 @@ function renderUpgradeTab() {
     let shownCost = costs[i];              // 默认显示手动价格
     if (replaced) {
       // 织线生效：显示下一个织线等级的价格
-      let wLv = S['weaving' + i];
-      if (i === 1) shownCost = cost1(wLv);
-      if (i === 2) shownCost = cost2(wLv);
-      if (i === 3) shownCost = cost3(wLv);
+      // ★ 价格用「受成就影响前」的基础等级，不含成就24/43 加成
+      let baseLv = weavingCalc(i === 1 ? cost1 : i === 2 ? cost2 : cost3, S.maxMoneyHeld);
+      if (i === 1) shownCost = cost1(baseLv);
+      if (i === 2) shownCost = cost2(baseLv);
+      if (i === 3) shownCost = cost3(baseLv);
     }
     if ($('c' + i)) $('c' + i).textContent = fmt(shownCost);
     if ($('l' + i)) $('l' + i).textContent = replaced ? ('织线 Lv.' + S['weaving' + i]) : ('Lv.' + S.lv[i]);
@@ -3522,10 +3527,11 @@ function renderUpgradeTab() {
     let replaced = (i <= 3 && wlv >= i);
     let shownCost = costs[i];
     if (replaced) {
-      let wLv = S['weaving' + i];
-      if (i === 1) shownCost = cost1(wLv);
-      if (i === 2) shownCost = cost2(wLv);
-      if (i === 3) shownCost = cost3(wLv);
+      // ★ 价格用「受成就影响前」的基础等级
+      let baseLv = weavingCalc(i === 1 ? cost1 : i === 2 ? cost2 : cost3, S.maxMoneyHeld);
+      if (i === 1) shownCost = cost1(baseLv);
+      if (i === 2) shownCost = cost2(baseLv);
+      if (i === 3) shownCost = cost3(baseLv);
     }
     if ($('c' + i + 'b')) $('c' + i + 'b').textContent = fmt(shownCost);
     if ($('l' + i + 'b')) $('l' + i + 'b').textContent = replaced ? ('织线 Lv.' + S['weaving' + i]) : ('Lv.' + S.lv[i]);
@@ -3586,6 +3592,16 @@ function renderUpgradeTab() {
   if (S.ach[22]) {
     if ($('ur3')) $('ur3').style.display = 'block';
     if ($('ur4')) $('ur4').style.display = 'block';
+  }
+
+  // ★ 成就43 后织线·残根1 覆盖手动等级，禁用 ur1
+  if (S.ach[43] && $('ur1')) {
+    $('ur1').disabled = true;
+    $('ur1').classList.add('woven');
+    if ($('lr1')) $('lr1').textContent = '织线 Lv.' + S.weavingR1;
+    if ($('cr1')) $('cr1').textContent = '织线生效中';
+  } else if ($('ur1')) {
+    $('ur1').classList.remove('woven');
   }
   
   // 残根6-10
@@ -3676,6 +3692,15 @@ function renderUpgradeTab() {
       if (S.ach[41]) $('ux5').style.display = 'block';
       else $('ux5').style.display = 'none';
     }
+    // ★ 成就43 后织线·邪茎7 覆盖手动等级，禁用 ux7
+    if (S.ach[43] && $('ux7')) {
+      $('ux7').disabled = true;
+      $('ux7').classList.add('woven');
+      if ($('lx7')) $('lx7').textContent = '织线 Lv.' + S.weavingX7;
+      if ($('cx7')) $('cx7').textContent = '织线生效中';
+    } else if ($('ux7')) {
+      $('ux7').classList.remove('woven');
+    }
     if ($('ux9')) {
       if (S.ach[42]) $('ux9').style.display = 'block';
       else $('ux9').style.display = 'none';
@@ -3683,7 +3708,26 @@ function renderUpgradeTab() {
   } else {
     if ($('panel-xie')) $('panel-xie').style.display = 'none';
   }
+  // ★ 莲契地（邪茎10）：第三阶段完成 + 成就44 后解锁
+  if ($('ux10')) {
+    let canShow10 = (S.maxBeaten >= 60) && S.ach[44];
+    if (canShow10) {
+      $('ux10').style.display = 'block';
+      if (S.lotusPactUnlocked) {
+        $('ux10').disabled = true;
+        if ($('lx10')) $('lx10').textContent = '已解锁';
+        if ($('cx10')) $('cx10').textContent = '—';
+      } else {
+        $('ux10').disabled = numCmp(S.money, numFrom(2e12)) < 0;
+        if ($('lx10')) $('lx10').textContent = '未解锁';
+        if ($('cx10')) $('cx10').textContent = '2×10^12';
+      }
+    } else {
+      $('ux10').style.display = 'none';
+    }
+  }
 }
+
 
 // 成就 TAB
 function renderAchievementTab() {
@@ -3703,6 +3747,8 @@ function renderAchievementTab() {
     { id: 34, name: '打破满分', cond: '伤残等级超过 100。', reward: '伤残等级升级所需经验公式改为：等级 ≤ 140 时为 1；等级 > 140 时为 (伤残等级-140)^2。' },
     { id: 41, name: '怎么这么硬', cond: '首次击败 51 级怪物。', reward: '解锁穿透类型的技能。' },
     { id: 42, name: '难不成你还要抹除"满级"设定？', cond: '满级升级 · 邪茎1。', reward: '解锁1个和抹除者有关的升级。' },
+    { id: 43, name: '十万次心跳', cond: '最终生命上限到达 10^5。', reward: '织线 · 萌生3 数量 + 邪茎7 等级；解锁织线 · 残根1 与 织线 · 邪茎7。' },
+    { id: 44, name: '舞舞舞', cond: '同时至少拥有 5 条织线、10^5 点生命上限和 50 伤残程度。', reward: '凄残币获取 ×4。第三阶段目标完成后，升级 TAB 会有新变化。' },
 
   ];
   // 按 id 排序：11,12,13,14,21,22...
@@ -3728,8 +3774,8 @@ function renderOptionsTab() {
   $('o-def').textContent = fmtNum(S.curDef);
   $('o-hp').textContent = `${fmtNum(S.hp)} / ${fmtNum(S.curMaxHp)}`;
   $('o-first').textContent = (S.range / (m ? m.speed : 1)).toFixed(1) + 's';
-  $('o-stage').textContent = S.stage === 1 ? '第一阶段 · 萌生' : '第二阶段 · 残根';
-  $('o-goal').textContent = S.stage === 1 ? '10^7 凄残币' : '100 级伤残等级';
+  $('o-stage').textContent = S.stage === 1 ? '第一阶段 · 萌生' : S.stage === 2 ? '第二阶段 · 残根' : '第三阶段 · 邪茎';
+  $('o-goal').textContent = S.stage === 1 ? '10^7 凄残币' : S.stage === 2 ? '100 级伤残等级' : '击败 60 级怪物';
   $('playTime').textContent = formatDuration(S.t);
   $('saveCount').textContent = getSaveCount();
   $('autosave-interval').onchange = () => {
@@ -3991,6 +4037,18 @@ function buyXie(idx) {
   renderBattle();
 }
 
+// 购买莲契地（邪茎10）
+function buyLotusPact() {
+  if (S.lotusPactUnlocked) return;
+  if (numCmp(S.money, numFrom(2e12)) < 0) return;
+  S.money = numSub(S.money, numFrom(2e12));
+  S.lotusPactUnlocked = true;
+  log('莲契地已解锁。属于厄凛娜斯的，莲契地。', 'hl');
+  recalc();
+  renderUpgradeTab();
+  renderBattle();
+}
+
 // 绑定萌生升级（单栏版）
 $('up1').onclick = () => buy(1);
 $('up2').onclick = () => buy(2);
@@ -4028,6 +4086,7 @@ $('ux6').onclick = () => buyXie(6);
 $('ux7').onclick = () => buyXie(7);
 $('ux8').onclick = () => buyXie(8);
 $('ux9').onclick = () => buyXie(9);
+$('ux10').onclick = () => buyLotusPact();
 
 // ============================================================
 // 第十五部分：怪物等级选择
@@ -4072,7 +4131,7 @@ $('lvInput').onchange = () => { clampLvInput(); };
 // ============================================================
 function serialize() {
   return {
-    v: 6,
+    v: 7,
 
     // ============================================================
     // 1. 战斗
@@ -4184,6 +4243,8 @@ function serialize() {
     weaving1: S.weaving1,
     weaving2: S.weaving2,
     weaving3: S.weaving3,
+    weavingR1: S.weavingR1,
+    weavingX7: S.weavingX7,
 
     // ============================================================
     // 4. 伤残秘境
@@ -4199,11 +4260,12 @@ function serialize() {
     ach: { ...S.ach },
 
     // ============================================================
-    // 其它（进度、阶段、剧情、自动存档）
+    // 6. 其它（进度、阶段、剧情、自动存档）
     // ============================================================
     stage: S.stage,
     done: S.done,
     cleared: S.cleared,
+    lotusPactUnlocked: S.lotusPactUnlocked,
     tutorial8Unlocked: S.tutorial8Unlocked,
     tutorial10Unlocked: S.tutorial10Unlocked,
     storyUnlocked: { ...S.storyUnlocked },
@@ -4213,6 +4275,18 @@ function serialize() {
 
 function deserialize(data) {
   if (!data) throw new Error('存档为空');
+
+  // ============================================================
+  // 0. 校验
+  // ============================================================
+  // 存档版本
+  if (data.v !== 1 && data.v !== 2 && data.v !== 3 && data.v !== 4 && data.v !== 5 && data.v !== 6 && data.v !== 7) {
+    throw new Error('存档版本不匹配');
+  }
+  // ★ 根据成就重算凄残币倍率（不信任存档里的 moneyMultiplier）
+  S.moneyMultiplier = 1.0;
+  if (data.ach && data.ach[12]) S.moneyMultiplier *= 2;
+  if (data.ach && data.ach[44]) S.moneyMultiplier *= 4;
 
   // ============================================================
   // 1. 战斗
@@ -4311,7 +4385,6 @@ function deserialize(data) {
   // 萌生
   S.lv = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, ...(data.lv || {}) };
   S.money = data.money ? { m: data.money.m, e: data.money.e } : makeNum(0,0);
-  S.moneyMultiplier = data.moneyMultiplier !== undefined ? data.moneyMultiplier : 1.0;
   S.maxMoneyHeld = data.maxMoneyHeld ? { m: data.maxMoneyHeld.m, e: data.maxMoneyHeld.e } : makeNum(0, 0);
   // 残根
   S.lvRoot = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, ...(data.lvRoot || {}) };
@@ -4328,6 +4401,10 @@ function deserialize(data) {
   S.weaving1 = data.weaving1 || 0;
   S.weaving2 = data.weaving2 || 0;
   S.weaving3 = data.weaving3 || 0;
+  S.weavingR1 = data.weavingR1 || 0;
+  S.weavingX7 = data.weavingX7 || 0;
+  // ★ 旧档没有 weavingR1/X7 字段，按当前峰值重算，避免织线·残根1 读档后失效
+  recalcWeavingR1X7();
 
   // ============================================================
   // 4. 伤残秘境
@@ -4344,38 +4421,39 @@ function deserialize(data) {
     11:false, 12:false, 13:false, 14:false, 
     21:false, 22:false, 23:false, 24:false, 
     31:false, 32:false, 33:false, 34:false, 
-    41:false, 42:false, 
+    41:false, 42:false, 43:false, 44:false, 
     ...(data.ach || {}) 
   };
 
   // ============================================================
-  // 其它（进度、阶段、剧情、自动存档）
+  // 6. 其它（进度、阶段、剧情、自动存档）
   // ============================================================
   S.stage = data.stage || 1;
   S.done = data.done || false;
   S.cleared = data.cleared !== undefined ? data.cleared : S.done;
+  S.lotusPactUnlocked = data.lotusPactUnlocked || false;
   S.tutorial8Unlocked = data.tutorial8Unlocked || false;
   S.tutorial10Unlocked = data.tutorial10Unlocked || false;
   if (S.disabilityLv >= 100) S.tutorial8Unlocked = true;
   if (S.lvXie[6] >= 1) S.tutorial10Unlocked = true;
   S.storyUnlocked = data.storyUnlocked || {};
   autoUnlockStories();
+  // ★ 加载存档后自动解除所有禁忌知识
+  if (forbiddenActive) deactivateForbidden();
   S.autoSaveInterval = data.autoSaveInterval !== undefined ? data.autoSaveInterval : 30;
   S.autoSaveTimer = 0;
+  S.lastAutoSave = S.t;   // ★ 读档后重置「距上次自动存档」为 0
   if ($('autosave-interval')) {
     $('autosave-interval').value = String(S.autoSaveInterval);
   }
 
   // ============================================================
-  // DOM 渲染（保持原样）
+  // 7. DOM 渲染（保持原样）
   // ============================================================
   if (S.lotusUnlocked && $('skill-lotus')) $('skill-lotus').style.display = 'block';
   if (S.weavingUnlocked && $('tabbtn-weaving')) $('tabbtn-weaving').classList.remove('hidden');
   if (S.ach[23] && $('ur5')) $('ur5').style.display = 'block';
   if (S.stage >= 3 && $('panel-xie')) $('panel-xie').style.display = 'block';
-  if (!data || (data.v !== 1 && data.v !== 2 && data.v !== 3 && data.v !== 4 && data.v !== 5 && data.v !== 6)) {
-    throw new Error('存档版本不匹配');
-  }
 
   // ★ 导入存档后强制切休息
   S.mode = 'rest';
@@ -4496,9 +4574,9 @@ function renderWeavingTab() {
   // 同步到 S
   S.weaving1 = final1;
   S.weaving2 = final2;
-  S.weaving3 = base3;
+  // S.weaving3 改在织线3 分支里按 base3 + bonus3 设置
 
-  // 织线1
+  // 织线·萌生1
   if (wlv >= 1) {
     $('weaving-box-1').style.display = 'block';
     $('weaving-1').textContent = final1;
@@ -4510,7 +4588,7 @@ function renderWeavingTab() {
     $('weaving-box-1').style.display = 'none';
   }
 
-  // 织线2
+  // 织线·萌生2
   if (wlv >= 2) {
     $('weaving-box-2').style.display = 'block';
     $('weaving-2').textContent = final2;
@@ -4522,11 +4600,37 @@ function renderWeavingTab() {
     $('weaving-box-2').style.display = 'none';
   }
 
-  // 织线3
+  // ★ 成就43 解锁的织线·残根1 / 织线·邪茎7
+  if (S.ach[43]) {
+    recalcWeavingR1X7();
+    let boxR1 = $('weaving-box-r1');
+    let boxX7 = $('weaving-box-x7');
+    if (boxR1) {
+      boxR1.style.display = 'block';
+      $('weaving-r1').textContent = S.weavingR1;
+      $('weaving-formula-r1').textContent = `[${S.weavingR1}]`;
+    }
+    if (boxX7) {
+      boxX7.style.display = 'block';
+      $('weaving-x7').textContent = S.weavingX7;
+      $('weaving-formula-x7').textContent = `[${S.weavingX7}]`;
+    }
+  } else {
+    if ($('weaving-box-r1')) $('weaving-box-r1').style.display = 'none';
+    if ($('weaving-box-x7')) $('weaving-box-x7').style.display = 'none';
+  }
+
+  // 织线·萌生3
   if (wlv >= 3) {
     $('weaving-box-3').style.display = 'block';
-    $('weaving-3').textContent = base3;
-    let f3 = `[${base3}]`;
+    // ★ 成就43：织线·萌生3 数量 + 邪茎7 等级
+    let bonus3 = S.ach[43] ? (S.lvXie[7] || 0) : 0;
+    let final3 = base3 + bonus3;
+    S.weaving3 = final3;
+    $('weaving-3').textContent = final3;
+    let f3 = `[${base3}`;
+    if (S.ach[43]) f3 += `+[成就43]${S.lvXie[7] || 0}`;
+    f3 += `]`;
     $('weaving-formula-3').textContent = f3;
   } else {
     $('weaving-box-3').style.display = 'none';
@@ -4534,6 +4638,17 @@ function renderWeavingTab() {
 }
 // 计算在给定预算下，最多能买到第几级
 // 规则：maxMoney ≥ cost(n) 就能买到第 n 级
+// ★ 重算成就43 解锁的织线·残根1 / 织线·邪茎7
+function recalcWeavingR1X7() {
+  if (!S.ach[43]) {
+    S.weavingR1 = 0;
+    S.weavingX7 = 0;
+    return;
+  }
+  S.weavingR1 = weavingCalc(costR1, S.maxMoneyHeld);
+  S.weavingX7 = weavingCalc(costX7, S.maxMoneyHeld);
+}
+// 原本的织线·萌生1~3
 function weavingCalc(costFn, budget) {
   let lv = 0;
   while (true) {
@@ -4644,20 +4759,9 @@ function activateForbidden(n) {
   $('forbiddenBar').style.display = 'block';
 
   if (n === 1) {
-    // 基础属性临时降低
+    // 基础属性临时降低（只影响派生值，不改原始值，刷新后自然恢复）
     $('forbiddenText').textContent = '在《伤残秘境档案》中，厄凛娜斯的基础生命值只有600，基础攻击力只有15，基础防御力只有5，不信你就看看。';
-    // 备份
-    forbiddenBackup = {
-      rawAtk: S.rawAtk, rawDef: S.rawDef, baseHp: S.baseHp,
-      lv1: S.lv[1], lv2: S.lv[2], lv3: S.lv[3]
-    };
-    // 临时覆盖
-    S.rawAtk = 15;
-    S.rawDef = 5;
-    S.baseHp = 600;
-    S.lv[1] = 0;
-    S.lv[2] = Math.min(S.lv[2], 3);
-    S.lv[3] = Math.min(S.lv[3], 50);
+    // ★ 不再备份/覆盖原始值，recalc 的禁忌分支会直接覆盖派生值
   }
   if (n === 2) {
     // 鼠标失灵 + 网页暗淡
@@ -4675,15 +4779,7 @@ function activateForbidden(n) {
 }
 
 function deactivateForbidden() {
-  if (forbiddenActive === 1 && forbiddenBackup) {
-    S.rawAtk = forbiddenBackup.rawAtk;
-    S.rawDef = forbiddenBackup.rawDef;
-    S.baseHp = forbiddenBackup.baseHp;
-    S.lv[1] = forbiddenBackup.lv1;
-    S.lv[2] = forbiddenBackup.lv2;
-    S.lv[3] = forbiddenBackup.lv3;
-    forbiddenBackup = null;
-  }
+  // ★ 禁忌1 不再修改原始值，无需还原；派生值由 recalc 正常分支恢复
   if (forbiddenActive === 2) {
     document.body.style.pointerEvents = '';
     document.body.style.filter = '';
@@ -4937,7 +5033,9 @@ const TUTORIAL_DATA = [
   {
     id: 6,
     title: '织线',
-    content: `织线自动计算你这个存档历史上最多持有的凄残币可以购买几级对应的升级，只要是最高一级的升级价格比这个存档历史上最多持有的凄残币低，织线就能帮你自动购买到该等级。`,
+    content: `织线自动计算你这个存档历史上最多持有的凄残币可以购买几级对应的升级，只要是最高一级的升级价格比这个存档历史上最多持有的凄残币低，织线就能帮你自动购买到该等级。
+
+注意：织线使用的是「当前」价格函数。如果改变了升级的常数乘区，织线会按新价格重新计算历史峰值对应的等级，这是规则性效果，并非 bug。`,
     unlock: () => S.weavingUnlocked
   },
   {
@@ -5433,6 +5531,20 @@ $('btn-export-continue').onclick = () => {
 $('btn-release-lotus').onclick = () => releaseLotusSeed('back');
 $('btn-release-lotus-front').onclick = () => releaseLotusSeed('front');
 
+// 首次击败 60 级怪物时，自动切到升级 TAB 并提示
+let hasShownStage3Tip = false;
+function checkStage3Complete() {
+  if (hasShownStage3Tip) return;
+  if (S.maxBeaten >= 60 && !S.cleared) {
+    // 由 win() 处理，不重复提示
+    return;
+  }
+  if (S.maxBeaten >= 60 && S.cleared && S.stage === 3) {
+    hasShownStage3Tip = true;
+    log('★ 第三阶段目标已完成。若你选择继续游玩，请查看「升级」栏目和成就44。', 'hl');
+  }
+}
+
 // 首次达到 1e7 时，自动切到升级 TAB 并提示
 let hasShown1e7Tip = false;
 function checkFirst1e7() {
@@ -5455,6 +5567,7 @@ function loop(now) {
   if (gameStarted && !tutorialPaused) {
     tick(dt);
     checkFirst1e7();
+    checkStage3Complete();
     if (!tutorialPaused) {
       // ★ 自动存档
       if (S.autoSaveInterval > 0) {
