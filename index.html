@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>厄凛娜斯的成神之路 · 4.19</title>
+<title>厄凛娜斯的成神之路 · 4.21</title>
 <style>
   /* ============================================================
      CSS 样式
@@ -103,6 +103,39 @@
   }
   #btn-tutorial.blink {
     animation: tutorialBlink 2s ease-in-out infinite;
+  }
+  /* ★ 新功能提示：TAB 按钮闪烁 + ⭐标识 */
+  #tabbar button {
+    position: relative;
+  }
+  #tabbar button.blink {
+    animation: tutorialBlink 2s ease-in-out infinite;
+  }
+  .new-badge {
+    position: absolute;
+    top: -10px;
+    right: -6px;
+    font-size: 10px;
+    color: #ffe566;
+    background: #4a3a00;
+    border: 1px solid #ffcc00;
+    border-radius: 4px;
+    padding: 0 4px;
+    line-height: 14px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  /* 升级/战斗按钮闪烁（复用 tutorialBlink） */
+  button.blink {
+    animation: tutorialBlink 2s ease-in-out infinite;
+  }
+
+  /* ★ 升级 TAB 顶部确认按钮 */
+  #btn-ack-upgrade-hints:hover {
+    background: #145214 !important;
+    border-color: #2ad52a !important;
   }
 
   /* ===== TAB 切换栏 ===== */
@@ -1079,6 +1112,8 @@
 
   <!-- ===== TAB 2：升级 ===== -->
   <div id="tab-upgrade" class="tab-panel">
+    <!-- ★ 新升级提示条 -->
+    <div id="upgradeHintBar" style="display:none;margin-bottom:12px;"></div>
     <!-- 未解锁残根时：单栏，只有萌生 -->
     <div id="upgrade-single">
       <div class="panel">
@@ -1661,6 +1696,8 @@ const S = {
   // 邪茎阶段及升级效果
   expFormulaChanged: false,
   disabilityMax: 100,
+  lotusPactUnlocked: false,           // ★ 莲契地是否解锁（邪茎10）
+  hintState: {},                      // ★ 新功能提示状态：{ id: -1|0|1 }
 };
 
 // ============================================================
@@ -1996,7 +2033,166 @@ function spawnMonster() {
 }
 
 // ============================================================
-// 第七部分：TAB 切换
+// 第七部分：新功能提示系统
+// ============================================================
+// tab: 所属 TAB；stageLabel: 升级TAB的⭐文案分类（'萌生'/'残根'/'邪茎'，仅升级类需要）
+// seenType: 'tab' 切TAB算看到；'click' 点击按钮算看到；'buy' 成功购买算看到
+const NewFeatureHint = {
+  1:  { tab: 'battle',  seenType: 'click', key: 'modeFight' },
+  2:  { tab: 'upgrade', seenType: 'buy',   key: 'up7',  stageLabel: '萌生' },
+  3:  { tab: 'disability', seenType: 'tab' },
+  4:  { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ur3',  stageLabel: '残根' },
+  5:  { tab: 'weaving', seenType: 'tab' },
+  6:  { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ur5',  stageLabel: '残根' },
+  7:  { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ur6',  stageLabel: '残根' },
+  8:  { tab: 'battle',  seenType: 'click', key: 'btn-release-lotus' },
+  9:  { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ur10', stageLabel: '残根' },
+  10: { tab: 'battle',  seenType: 'click', key: 'btn-switch-yuanyin' },
+  11: { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ux2',  stageLabel: '邪茎' },
+  12: { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ux5',  stageLabel: '邪茎' },
+  13: { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ux5',  stageLabel: '邪茎' },
+  14: { tab: 'upgrade', seenType: 'tab',   needConfirm: true, key: 'ux9',  stageLabel: '邪茎' },
+  15: { tab: 'upgrade', seenType: 'buy',   key: 'ux10', stageLabel: '邪茎' },
+};
+
+function getHintState(id) {
+  return S.hintState[id] !== undefined ? S.hintState[id] : -1;
+}
+// 刷新所有提示：TAB 闪烁 + ⭐标识 + 对应按钮闪烁
+function refreshHints() {
+  // 1. 按 TAB 聚合未查看（state===0）的条目
+  let tabPending = {};   // tab -> [ids]
+  for (let idStr in NewFeatureHint) {
+    let id = parseInt(idStr, 10);
+    let cfg = NewFeatureHint[id];
+    if (getHintState(id) === 0) {
+      if (!tabPending[cfg.tab]) tabPending[cfg.tab] = [];
+      tabPending[cfg.tab].push(id);
+    }
+  }
+  // 2. 更新每个 TAB 按钮的闪烁与 ⭐
+  document.querySelectorAll('#tabbar button').forEach(btn => {
+    let tab = btn.dataset.tab;
+    let ids = tabPending[tab];
+    let badge = btn.querySelector('.new-badge');
+    if (ids && ids.length > 0) {
+      btn.classList.add('blink');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'new-badge';
+        btn.appendChild(badge);
+      }
+      // ⭐ 文案
+      if (tab === 'upgrade') {
+        // 按 stageLabel 分类
+        let labels = [];
+        for (let id of ids) {
+          let l = NewFeatureHint[id].stageLabel;
+          if (l && labels.indexOf(l) < 0) labels.push(l);
+        }
+        if (labels.length > 0) {
+          badge.textContent = '⭐ 新 ' + labels.join(',') + '升级 ⭐';
+        } else {
+          badge.textContent = '⭐ 新 ⭐';
+        }
+      } else {
+        badge.textContent = '⭐ 新 ⭐';
+      }
+    } else {
+      btn.classList.remove('blink');
+      if (badge) badge.remove();
+    }
+  });
+  // 3. 更新升级/战斗按钮的闪烁（仅 click/buy 类型，且 state===0）
+  for (let idStr in NewFeatureHint) {
+    let id = parseInt(idStr, 10);
+    let cfg = NewFeatureHint[id];
+    if (!cfg.key) continue;
+    let el = $(cfg.key);
+    if (!el) continue;
+    if (getHintState(id) === 0 && (cfg.seenType === 'click' || cfg.seenType === 'buy')) {
+      el.classList.add('blink');
+    } else {
+      el.classList.remove('blink');
+    }
+  }
+  // 4. ★ 升级 TAB 顶部提示条
+  refreshUpgradeHintBar();
+}
+
+// ★ 升级 TAB 顶部提示条：未确认的新升级显示黄色提示 + 绿色确认按钮
+function refreshUpgradeHintBar() {
+  let bar = $('upgradeHintBar');
+  if (!bar) return;
+  // 收集 needConfirm 且 state===0 的条目
+  let pending = [];
+  for (let idStr in NewFeatureHint) {
+    let id = parseInt(idStr, 10);
+    let cfg = NewFeatureHint[id];
+    if (cfg.tab === 'upgrade' && cfg.needConfirm && getHintState(id) === 0) {
+      pending.push(id);
+    }
+  }
+  if (pending.length === 0) {
+    bar.style.display = 'none';
+    bar.innerHTML = '';
+    return;
+  }
+  // 聚合阶段文案
+  let labels = [];
+  for (let id of pending) {
+    let l = NewFeatureHint[id].stageLabel;
+    if (l && labels.indexOf(l) < 0) labels.push(l);
+  }
+  let labelText = labels.length > 0 ? labels.join(',') : '新';
+  bar.style.display = 'block';
+  bar.innerHTML = `
+    <div style="background:#4a3a00;border:1px solid #ffcc00;border-radius:6px;padding:10px 12px;margin-bottom:6px;color:#ffe566;font-size:13px;text-align:center;">
+      ⭐ 新升级 ${labelText} 已解锁，请查看 ⭐
+    </div>
+    <button id="btn-ack-upgrade-hints" style="background:#0d3d0d;border-color:#199B19;color:#6ad58a;text-align:center;font-size:13px;">所有新升级提示你已确认知晓</button>
+  `;
+  $('btn-ack-upgrade-hints').onclick = () => {
+    // 确认所有 needConfirm 的未查看条目
+    for (let id of pending) {
+      S.hintState[id] = 1;
+    }
+    refreshHints();
+  };
+}
+
+function setHintState(id, v) {
+  S.hintState[id] = v;
+  refreshHints();
+}
+// 解锁时调用：-1 → 0
+function unlockHint(id) {
+  if (getHintState(id) === -1) {
+    S.hintState[id] = 0;
+    refreshHints();
+  }
+}
+// ★ 批量解锁，只刷新一次
+function unlockHints(ids) {
+  let changed = false;
+  for (let id of ids) {
+    if (getHintState(id) === -1) {
+      S.hintState[id] = 0;
+      changed = true;
+    }
+  }
+  if (changed) refreshHints();
+}
+// 标记已看：0 → 1
+function markHintSeen(id) {
+  if (getHintState(id) === 0) {
+    S.hintState[id] = 1;
+    refreshHints();
+  }
+}
+
+// ============================================================
+// 第八部分：TAB 切换
 // ============================================================
 const TAB_LIST = ['battle', 'upgrade', 'weaving', 'disability', 'achievement', 'story', 'options'];
 let currentTab = 'battle';
@@ -2013,6 +2209,18 @@ function switchTab(tabName) {
     p.classList.remove('active');
   });
   $('tab-' + tabName).classList.add('active');
+
+  // ★ 切到该 TAB，处理 seenType==='tab' 的未查看条目
+  //    - needConfirm: 不自动置 1，由升级 TAB 顶部提示条确认
+  //    - 否则（整 TAB 提醒）：切过去就算看到
+  for (let idStr in NewFeatureHint) {
+    let id = parseInt(idStr, 10);
+    let cfg = NewFeatureHint[id];
+    if (cfg.tab === tabName && cfg.seenType === 'tab' && !cfg.needConfirm && getHintState(id) === 0) {
+      S.hintState[id] = 1;
+    }
+  }
+  refreshHints();
 
   // 切过去时渲染对应 TAB
   if (tabName === 'options') renderOptionsTab();
@@ -2044,7 +2252,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================================
-// 第八部分：成就系统
+// 第九部分：成就系统
 // ============================================================
 function completeAchievement(id) {
   if (S.ach[id]) return;
@@ -2069,6 +2277,7 @@ function completeAchievement(id) {
   }
   if (id === 14) {
     S.disabilityUnlocked = true;
+    unlockHint(3);   // 伤残秘境 TAB
     $('tabbtn-disability').classList.remove('hidden');
     $('row-disability-lv').style.display = 'flex';
     $('row-disability-value').style.display = 'flex';
@@ -2092,12 +2301,14 @@ function completeAchievement(id) {
   if (id === 22) {
     $('ur3').style.display = 'block';
     $('ur4').style.display = 'block';
+    unlockHint(4);   // 残根3/4 升级
     log('成就奖励：解锁残根升级「邪念无伤·攻」「邪念无伤·防」。', 'hl');
   }
   if (id === 23) {
     S.weavingUnlocked = true;
     $('tabbtn-weaving').classList.remove('hidden');
     log('成就奖励：解锁织线。', 'hl');
+    unlockHints([5, 6]);   // 织线 TAB + 残根5 萌生之织线
     // ★ 解锁时立刻算一次织线等级
     let budget = S.maxMoneyHeld;
     let w1 = weavingCalc(cost1, budget);
@@ -2127,14 +2338,17 @@ function completeAchievement(id) {
   if (id === 31) {
     S.lotusUnlocked = true;
     $('skill-lotus').style.display = 'block';
+    unlockHints([7, 8]);   // 残根6~9 + 邪莲之种种植按钮
     log('成就奖励：解锁技能【邪莲之种】。', 'hl');
   }
   if (id === 32) {
+    unlockHint(9);   // 残根10
     log('成就奖励：邪莲之种的存储上限和存在上限 +1。', 'hl');
     // 实际上限在 lotusSeedMax() 和 lotusMax() 里算
   }
   if (id === 33) {
     S.yuanyinUnlocked = true;
+    unlockHints([10, 11]);  // 怨引切换按钮 + 邪茎2~4
     log('成就奖励：解锁伤残技【怨引】。', 'hl');
   }
   if (id === 34) {
@@ -2142,9 +2356,11 @@ function completeAchievement(id) {
     log('成就奖励：伤残等级升级所需经验公式改为：等级≤140 时为 1；等级>140 时为 (伤残等级-140)^2。', 'hl');
   }
   if (id === 41) {
+    unlockHints([12, 13]);  // 邪茎5 + 51级怪相关升级
     log('成就奖励：解锁升级 · 邪茎5「会心穿透」。', 'hl');
   }
   if (id === 42) {
+    unlockHint(14);  // 邪茎9
     log('成就奖励：解锁升级 · 邪茎9，一个和抹除者有关的升级。', 'hl');
   }
   if (id === 43) {
@@ -2156,6 +2372,7 @@ function completeAchievement(id) {
   if (id === 44) {
     // 在成就12（×2）基础上叠乘 ×4，最终 ×8
     S.moneyMultiplier = S.moneyMultiplier * 4;
+    // ★ 15 的解锁条件：成就44 + 第三阶段完成（maxBeaten>=60），在 tick 里检测
     log(`成就奖励：凄残币获取 ×4（叠乘后当前 ×${S.moneyMultiplier}）。第三阶段目标完成后，升级 TAB 会有新变化。`, 'hl');
   }
 
@@ -2185,7 +2402,7 @@ function getAchievementName(id) {
 }
 
 // ============================================================
-// 第九部分：剧情系统
+// 第十部分：剧情系统
 // ============================================================
 
 // 所有剧情的定义
@@ -2519,7 +2736,7 @@ function autoUnlockStories() {
 }
 
 // ============================================================
-// 第十部分：剧情回顾
+// 第十一部分：剧情回顾
 // ============================================================
 
 // 渲染剧情回顾列表
@@ -2568,7 +2785,7 @@ function loadStoryUnlocked() {
 }
 
 // ============================================================
-// 第十一部分：模式切换
+// 第十二部分：模式切换
 // ============================================================
 function setMode(m) {
   if (S.mode === m) return;
@@ -2586,11 +2803,11 @@ function setMode(m) {
   renderBattle();
 }
 
-$('modeFight').onclick = () => setMode('fight');
+$('modeFight').onclick = () => { markHintSeen(1); setMode('fight'); };
 $('modeRest').onclick = () => setMode('rest');
 
 // ============================================================
-// 第十二部分：战斗逻辑
+// 第十三部分：战斗逻辑
 // ============================================================
 
 // 玩家攻击怪物
@@ -2670,6 +2887,7 @@ function yuanyinAttack(m) {
 }
 
 $('btn-switch-yuanyin').onclick = () => {
+  markHintSeen(10);   // ★ 怨引切换按钮已点击
   if (S.normalAttack === '怨引') {
     S.normalAttack = '棘刺';
     S.atkTimer = 0;
@@ -3053,6 +3271,10 @@ function tick(dt) {
     S.ach[43] = true;
     completeAchievement(43);
   }
+  // ★ 条目 15：成就44 完成 + 第三阶段完成（maxBeaten>=60）→ 解锁莲契地提示
+  if (S.ach[44] && S.maxBeaten >= 60 && getHintState(15) === -1 && !S.lotusPactUnlocked) {
+    unlockHint(15);
+  }
   // ★ 成就44：同时至少 5 条织线、10^5 生命上限、50 伤残程度
   if (!S.ach[44]) {
     let weavingCount = 0;
@@ -3152,7 +3374,7 @@ function win() {
 }
 
 // ============================================================
-// 第十三部分：渲染
+// 第十四部分：渲染
 // ============================================================
 
 // 战斗 TAB 每帧更新
@@ -3832,7 +4054,7 @@ function formatDuration(sec) {
 }
 
 // ============================================================
-// 第十四部分：购买升级
+// 第十五部分：购买升级
 // ============================================================
 function buy(idx) {
   const n = S.lv[idx];
@@ -3871,6 +4093,7 @@ function buyDisability() {
   if (numCmp(S.money, numFrom(1e7)) < 0) return;
   S.money = numSub(S.money, numFrom(1e7));
   S.lv[7] = 1;
+  markHintSeen(2);   // ★ 萌生7 购买成功，标记已看
   completeAchievement(14);
   recalc();
   renderUpgradeTab();
@@ -4043,6 +4266,7 @@ function buyLotusPact() {
   if (numCmp(S.money, numFrom(2e12)) < 0) return;
   S.money = numSub(S.money, numFrom(2e12));
   S.lotusPactUnlocked = true;
+  markHintSeen(15);   // ★ 莲契地购买成功，标记已看
   log('莲契地已解锁。属于厄凛娜斯的，莲契地。', 'hl');
   recalc();
   renderUpgradeTab();
@@ -4089,7 +4313,7 @@ $('ux9').onclick = () => buyXie(9);
 $('ux10').onclick = () => buyLotusPact();
 
 // ============================================================
-// 第十五部分：怪物等级选择
+// 第十六部分：怪物等级选择
 // ============================================================
 function clampLvInput() {
   let v = parseInt($('lvInput').value, 10);
@@ -4127,7 +4351,7 @@ $('lvApply').onclick = () => {
 $('lvInput').onchange = () => { clampLvInput(); };
 
 // ============================================================
-// 第十六部分：存档
+// 第十七部分：存档
 // ============================================================
 function serialize() {
   return {
@@ -4266,6 +4490,7 @@ function serialize() {
     done: S.done,
     cleared: S.cleared,
     lotusPactUnlocked: S.lotusPactUnlocked,
+    hintState: { ...S.hintState },
     tutorial8Unlocked: S.tutorial8Unlocked,
     tutorial10Unlocked: S.tutorial10Unlocked,
     storyUnlocked: { ...S.storyUnlocked },
@@ -4432,6 +4657,7 @@ function deserialize(data) {
   S.done = data.done || false;
   S.cleared = data.cleared !== undefined ? data.cleared : S.done;
   S.lotusPactUnlocked = data.lotusPactUnlocked || false;
+  S.hintState = data.hintState ? { ...data.hintState } : {};
   S.tutorial8Unlocked = data.tutorial8Unlocked || false;
   S.tutorial10Unlocked = data.tutorial10Unlocked || false;
   if (S.disabilityLv >= 100) S.tutorial8Unlocked = true;
@@ -4443,6 +4669,30 @@ function deserialize(data) {
   S.autoSaveInterval = data.autoSaveInterval !== undefined ? data.autoSaveInterval : 30;
   S.autoSaveTimer = 0;
   S.lastAutoSave = S.t;   // ★ 读档后重置「距上次自动存档」为 0
+  // ★ 读档后刷新提示（旧档没有 hintState，默认 -1，需按当前进度补解锁）
+  if (!S.hintState) S.hintState = {};
+  // 条目 1：战斗按钮，新档才解锁；旧档已有进度视为已看
+  if (S.hintState[1] === undefined) S.hintState[1] = 1;
+  // 条目 2：萌生7，未购买则解锁提醒
+  if (!S.disabilityUnlocked && S.hintState[2] === undefined) S.hintState[2] = -1; // 等 1e7 再解锁
+  if (S.disabilityUnlocked && S.hintState[2] === undefined) S.hintState[2] = 1;    // 已买过
+  // 条目 3：伤残秘境 TAB，已解锁则视为已看（旧档）
+  if (S.disabilityUnlocked && S.hintState[3] === undefined) S.hintState[3] = 1;
+  // 条目 5/6：织线，已解锁则视为已看
+  if (S.weavingUnlocked && S.hintState[5] === undefined) S.hintState[5] = 1;
+  if (S.ach[23] && S.hintState[6] === undefined) S.hintState[6] = 1;
+  // 条目 4/7/8/9/10/11/12/13/14：已解锁对应成就则视为已看
+  if (S.ach[22] && S.hintState[4] === undefined) S.hintState[4] = 1;
+  if (S.ach[31] && S.hintState[7] === undefined) S.hintState[7] = 1;
+  if (S.ach[31] && S.hintState[8] === undefined) S.hintState[8] = 1;
+  if (S.ach[32] && S.hintState[9] === undefined) S.hintState[9] = 1;
+  if (S.ach[33] && S.hintState[10] === undefined) S.hintState[10] = 1;
+  if (S.ach[33] && S.hintState[11] === undefined) S.hintState[11] = 1;
+  if (S.ach[41] && S.hintState[12] === undefined) S.hintState[12] = 1;
+  if (S.ach[41] && S.hintState[13] === undefined) S.hintState[13] = 1;
+  if (S.ach[42] && S.hintState[14] === undefined) S.hintState[14] = 1;
+  if (S.lotusPactUnlocked && S.hintState[15] === undefined) S.hintState[15] = 1;
+  refreshHints();
   if ($('autosave-interval')) {
     $('autosave-interval').value = String(S.autoSaveInterval);
   }
@@ -4551,7 +4801,7 @@ $('file-input').onchange = (e) => {
 };
 
 // ============================================================
-// 第十七部分：织线
+// 第十八部分：织线
 // ============================================================
 function renderWeavingTab() {
   if (!S.weavingUnlocked) return;
@@ -4661,7 +4911,7 @@ function weavingCalc(costFn, budget) {
 }
 
 // ============================================================
-// 第十八部分：自动存档
+// 第十九部分：自动存档
 // ============================================================
 const AUTO_SAVE_KEY = 'ellinuss_autosave';
 
@@ -4696,7 +4946,7 @@ function clearAuto() {
 }
 
 // ============================================================
-// 第十九部分：危险区：删除存档
+// 第二十部分：危险区：删除存档
 // ============================================================
 let deleteWasMode = 'rest';
 
@@ -4732,7 +4982,7 @@ $('deleteConfirm').onclick = () => {
 };
 
 // ============================================================
-// 第二十部分：危险区：禁忌知识
+// 第二十一部分：危险区：禁忌知识
 // ============================================================
 // 禁忌全局变量被移动到前面第二部分了
 $('btn-forbidden').onclick = () => {
@@ -4952,7 +5202,7 @@ function executeDelexe(cmd) {
 }
 
 // ============================================================
-// 第二十一部分：教程系统
+// 第二十二部分：教程系统
 // ============================================================
 const TUTORIAL_DATA = [
   {
@@ -5145,7 +5395,7 @@ $('btn-tutorial').onclick = openTutorial;
 $('tutorialClose').onclick = closeTutorial;
 
 // ============================================================
-// 第二十二部分：音乐系统
+// 第二十三部分：音乐系统
 // ============================================================
 const MUSIC_DATA = [
   { id: 'to_be_ellinuss', name: '予以厄凛娜斯', url: 'https://githubproxy.cc/https://raw.githubusercontent.com/SCQRMZWSH/Ellinusss-Road-to-Celestial/main/001_To_be_Ellinuss.mp3' },
@@ -5402,7 +5652,7 @@ function renderMusicList() {
 }
 
 // ============================================================
-// 第二十三部分：启动 & 主循环
+// 第二十四部分：启动 & 主循环
 // ============================================================
 let gameStarted = false;
 
@@ -5489,6 +5739,9 @@ function startGame() {
   log('厄凛娜斯睁开眼。白板。只有棘刺。');
   log('目标：10^7 凄残币，然后进入伤残秘境。');
   log('提示：新存档默认休息模式。Tab 键可切换栏目。');
+  // ★ 新存档：条目 1（战斗按钮）解锁
+  S.hintState = {};
+  unlockHint(1);
 
   recalc();
   renderBattle();
@@ -5528,8 +5781,8 @@ $('btn-export-continue').onclick = () => {
 };
 
 // 释放邪莲之种
-$('btn-release-lotus').onclick = () => releaseLotusSeed('back');
-$('btn-release-lotus-front').onclick = () => releaseLotusSeed('front');
+$('btn-release-lotus').onclick = () => { markHintSeen(8); releaseLotusSeed('back'); };
+$('btn-release-lotus-front').onclick = () => { markHintSeen(8); releaseLotusSeed('front'); };
 
 // 首次击败 60 级怪物时，自动切到升级 TAB 并提示
 let hasShownStage3Tip = false;
@@ -5556,6 +5809,7 @@ function checkFirst1e7() {
     if (!S.disabilityUnlocked) {
       if ($('up7')) $('up7').style.display = 'block';
       if ($('up7b')) $('up7b').style.display = 'block';
+      unlockHint(2);   // ★ 萌生7 解锁提示
     }
   }
 }
